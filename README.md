@@ -1,6 +1,6 @@
 # Cryer
 
-Automatic error reporting middleware for Node.js applications that reports to a centralized error tracking API.
+AI-powered error monitoring library for Node.js applications with automatic error reporting, context tracking, and intelligent error grouping.
 
 ## Installation
 
@@ -10,37 +10,43 @@ npm install cryer
 
 ## Features
 
-- Automatic error reporting for Express and NestJS applications
-- Global uncaught exception handling
-- Smart tagging based on error context
-- Severity classification based on HTTP status codes
-- Secure API authentication via x-cryer-signature header
+- **Framework Support**: Seamless integration with **Express** and **NestJS**.
+- **Automatic Context**: Captures headers, body, query, and params (sanitized).
+- **Breadcrumbs**: Tracks events leading to an error for better debugging.
+- **User Context**: Tie errors to specific users.
+- **Deduplication**: Intelligent fingerprinting groups similar errors together.
+- **Offline Reliability**: Queues reports when the API is unreachable.
+- **Global Capture**: Handles uncaught exceptions, unhandled rejections, and worker errors.
+- **Rate Limiting**: Protects your API from being flooded by repetitive errors.
 
 ## Usage with Express
+
+Inject Cryer as a single middleware. It handles both request tracking and global error catching.
 
 ```typescript
 import express from 'express';
 import { cryerExpress } from 'cryer';
 
 const app = express();
+app.use(express.json());
 
-// Your routes and middleware here
-app.get('/api/something', (req, res) => {
-  // This will be caught and reported
-  throw new Error('Something went wrong!');
-});
-
-// Add the error handler (should be after all routes)
+// Add Cryer middleware (early in the chain)
 app.use(cryerExpress({
   apiKey: 'your-api-key',
   environment: 'production',
-  tags: ['api-server', 'v1'] // Optional: Default tags for all errors
+  sensitiveKeys: ['password', 'card_number'] // Optional custom sanitization
 }));
+
+app.get('/api/test', (req, res) => {
+  throw new Error('Something went wrong!');
+});
 
 app.listen(3000);
 ```
 
 ## Usage with NestJS
+
+Use the `CryerExceptionFilter` to capture errors globally across HTTP, WebSockets, and RPC.
 
 ```typescript
 import { Module } from '@nestjs/common';
@@ -54,7 +60,7 @@ import { CryerExceptionFilter } from 'cryer';
       useClass: CryerExceptionFilter({
         apiKey: 'your-api-key',
         environment: 'production',
-        tags: ['nest-api', 'v1']
+        tags: ['nest-api']
       })
     }
   ]
@@ -62,24 +68,30 @@ import { CryerExceptionFilter } from 'cryer';
 export class AppModule {}
 ```
 
-## Manual Error Reporting
-
-You can also report errors manually:
+## Manual Reporting & Context
 
 ```typescript
 import { Cryer } from 'cryer';
 
-const cryer = new Cryer({
-  apiKey: 'your-api-key',
-  environment: 'production'
+const cryer = new Cryer({ apiKey: 'your-api-key' });
+
+// Add breadcrumbs for debugging trails
+cryer.addBreadcrumb({
+  message: 'User started checkout',
+  category: 'action',
+  data: { cartId: '123' }
+});
+
+// Set user context
+cryer.setUserContext({
+  id: 'user_456',
+  email: 'user@example.com'
 });
 
 try {
-  // Your code that might fail
-  doSomethingRisky();
+  doWork();
 } catch (error) {
-  // Manually report the error
-  cryer.reportError(error);
+  cryer.captureException(error, { custom_meta: 'extra-info' });
 }
 ```
 
@@ -89,16 +101,14 @@ try {
 const cryer = new Cryer({
   apiKey: 'your-api-key',
   environment: 'staging',
-  defaultSeverity: 'medium', // 'critical', 'high', 'medium', 'low'
-  tags: ['backend', 'payment-service'],
-  logToConsole: true, // Log errors to console (default: true)
-  timeout: 3000, // Timeout for API requests in ms (default: 5000)
-  shouldReport: (err, req, res) => {
-    // Custom logic to determine if an error should be reported
-    // For example, don't report 404 errors
-    if (res && res.statusCode === 404) {
-      return false;
-    }
+  defaultSeverity: 'medium',
+  maxBreadcrumbs: 50,
+  maxErrorsPerMinute: 100,
+  enableOfflineQueue: true,
+  sensitiveKeys: ['ssn', 'api_key'],
+  shouldReport: (err, req) => {
+    // Don't report 404s
+    if (req?.res?.statusCode === 404) return false;
     return true;
   }
 });
@@ -106,22 +116,12 @@ const cryer = new Cryer({
 
 ## Error Report Structure
 
-The error reports sent to the API have the following structure:
+Reports sent to the API include:
 
-```typescript
-interface ErrorReport {
-  title: string;         // Short, descriptive title for the error
-  message: string;       // Detailed description of the error
-  stack_trace?: string;  // Captures the stack trace (if applicable)
-  environment?: string;  // Environment where the error occurred (e.g., "production", "staging")
-  severity?: string;     // Severity level ("critical", "high", "medium", "low")
-  tags?: string[];       // Optional tags for categorizing or filtering errors
-}
-```
-
-## Authentication
-
-The library authenticates with the error reporting API by sending your API key in the `x-cryer-signature` header with each request.
+- **Metadata**: Title, message, stack trace, severity, tags.
+- **Context**: Request details (URL, method, headers, etc.), Server details (hostname, node version, memory).
+- **History**: Breadcrumbs leading up to the error.
+- **Identification**: Fingerprint for deduplication and User ID.
 
 ## License
 

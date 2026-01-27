@@ -1,0 +1,173 @@
+import fs from 'fs';
+import path from 'path';
+import { ErrorReport } from '../types';
+
+interface QueuedReport {
+    report: ErrorReport;
+    timestamp: number;
+    retries: number;
+}
+
+export class OfflineQueue {
+    private queue: QueuedReport[] = [];
+    private maxSize: number;
+    private queueFilePath: string;
+    private isProcessing: boolean = false;
+
+    constructor(maxSize: number = 100, queueDir?: string) {
+        this.maxSize = maxSize;
+
+        // Use temp directory for queue storage
+        const tempDir = queueDir || path.join(require('os').tmpdir(), 'cryer-queue');
+        if (!fs.existsSync(tempDir)) {
+            try {
+                fs.mkdirSync(tempDir, { recursive: true });
+            } catch (err) {
+                // Silently fail if we can't create the directory
+            }
+        }
+
+        this.queueFilePath = path.join(tempDir, 'error-queue.json');
+        this.loadQueue();
+    }
+
+    /**
+     * Add a report to the queue
+     */
+    enqueue(report: ErrorReport): void {
+        const queuedReport: QueuedReport = {
+            report,
+            timestamp: Date.now(),
+            retries: 0,
+        };
+
+        this.queue.push(queuedReport);
+
+        // Keep queue size under limit
+        if (this.queue.length > this.maxSize) {
+            this.queue.shift(); // Remove oldest
+        }
+
+        this.saveQueue();
+    }
+
+    /**
+     * Get the next report to send
+     */
+    dequeue(): QueuedReport | undefined {
+        return this.queue.shift();
+    }
+
+    /**
+     * Peek at the next report without removing it
+     */
+    peek(): QueuedReport | undefined {
+        return this.queue[0];
+    }
+
+    /**
+     * Re-add a failed report to the queue
+     */
+    requeueFailed(queuedReport: QueuedReport): void {
+        queuedReport.retries++;
+
+        // Only requeue if retries are below threshold
+        if (queuedReport.retries < 3) {
+            this.queue.unshift(queuedReport);
+            this.saveQueue();
+        }
+    }
+
+    /**
+     * Get queue size
+     */
+    size(): number {
+        return this.queue.length;
+    }
+
+    /**
+     * Check if queue is empty
+     */
+    isEmpty(): boolean {
+        return this.queue.length === 0;
+    }
+
+    /**
+     * Clear the queue
+     */
+    clear(): void {
+        this.queue = [];
+        this.saveQueue();
+    }
+
+    /**
+     * Load queue from disk
+     */
+    private loadQueue(): void {
+        try {
+            if (fs.existsSync(this.queueFilePath)) {
+                const data = fs.readFileSync(this.queueFilePath, 'utf-8');
+                this.queue = JSON.parse(data);
+
+                // Remove old reports (older than 24 hours)
+                const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
+                this.queue = this.queue.filter((item) => item.timestamp > oneDayAgo);
+            }
+        } catch (err) {
+            // Silently fail and start with empty queue
+            this.queue = [];
+        }
+    }
+
+    /**
+     * Save queue to disk
+     */
+    private saveQueue(): void {
+        try {
+            fs.writeFileSync(
+                this.queueFilePath,
+                JSON.stringify(this.queue, null, 2),
+                'utf-8'
+            );
+        } catch (err) {
+            // Silently fail
+        }
+    }
+
+    /**
+     * Process the queue with a send function
+     */
+    async processQueue(
+        sendFn: (report: ErrorReport) => Promise<void>
+    ): Promise<void> {
+        if (this.isProcessing || this.isEmpty()) {
+            return;
+        }
+
+        this.isProcessing = true;
+
+        try {
+            while (!this.isEmpty()) {
+                const queuedReport = this.peek();
+                if (!queuedReport) break;
+
+                try {
+                    await sendFn(queuedReport.report);
+                    this.dequeue(); // Remove on success
+                    this.saveQueue();
+                } catch (err) {
+                    // Failed to send, requeue with retry count
+                    const failed = this.dequeue();
+                    if (failed) {
+                        this.requeueFailed(failed);
+                    }
+                    break; // Stop processing on failure
+                }
+            }
+        } finally {
+            this.isProcessing = false;
+        }
+    }
+}
+
+export default OfflineQueue;

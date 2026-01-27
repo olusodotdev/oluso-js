@@ -38,82 +38,171 @@ var __setFunctionName = (this && this.__setFunctionName) || function (f, name, p
     return Object.defineProperty(f, "name", { configurable: true, value: prefix ? "".concat(prefix, " ", name) : name });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createCryerInterceptor = createCryerInterceptor;
+exports.CryerExceptionFilter = CryerExceptionFilter;
+exports.createCryerInterceptor = CryerExceptionFilter;
 const index_1 = require("../index");
 const common_1 = require("@nestjs/common");
-const operators_1 = require("rxjs/operators");
-// Create a unified interceptor that handles both caught and uncaught errors
-function createCryerInterceptor(options) {
+/**
+ * Create a NestJS exception filter for Cryer error monitoring
+ *
+ * Usage in your module:
+ * ```typescript
+ * import { APP_FILTER } from '@nestjs/core';
+ * import { CryerExceptionFilter } from 'cryer';
+ *
+ * @Module({
+ *   providers: [
+ *     {
+ *       provide: APP_FILTER,
+ *       useClass: CryerExceptionFilter({
+ *         apiKey: 'your-api-key',
+ *         environment: 'production'
+ *       })
+ *     }
+ *   ]
+ * })
+ * export class AppModule {}
+ * ```
+ */
+function CryerExceptionFilter(options) {
     const cryer = new index_1.Cryer(options);
-    let UnifiedCryerInterceptor = (() => {
-        let _classDecorators = [(0, common_1.Injectable)()];
+    let CryerFilter = (() => {
+        let _classDecorators = [(0, common_1.Catch)(), (0, common_1.Injectable)()];
         let _classDescriptor;
         let _classExtraInitializers = [];
         let _classThis;
-        var UnifiedCryerInterceptor = _classThis = class {
-            intercept(context, next) {
-                // Get the HTTP context
-                const httpContext = context.switchToHttp();
-                const request = httpContext.getRequest();
-                const response = httpContext.getResponse();
-                // Initialize tracking flag
-                const reportedErrorKey = '__cryerErrorReported';
-                response[reportedErrorKey] = false;
-                return next.handle().pipe(
-                // Handle successful responses with error status codes
-                (0, operators_1.tap)(() => {
-                    if (response.statusCode >= 500 && !response[reportedErrorKey]) {
-                        const serverError = new Error(`Server error: ${response.statusCode}`);
-                        const errorWithMeta = serverError;
-                        errorWithMeta.severity = 'critical';
-                        errorWithMeta.path = request.path;
-                        errorWithMeta.method = request.method;
-                        cryer.reportError(errorWithMeta, request, response);
-                        response[reportedErrorKey] = true;
-                    }
-                }), 
-                // Handle exceptions
-                (0, operators_1.catchError)(exception => {
-                    if (!response[reportedErrorKey]) {
-                        // Extract status code from the exception if available
-                        const status = exception.status || exception.statusCode || 500;
-                        // Determine severity based on status code
-                        let severity = options.defaultSeverity || 'medium';
-                        if (status >= 500) {
-                            severity = 'critical';
-                        }
-                        else if (status >= 400) {
-                            severity = 'high';
-                        }
-                        // Add severity to the exception
-                        exception.severity = severity;
-                        // Only report server errors (500) or if specifically configured
-                        if (status >= 500 || (options.shouldReport && options.shouldReport(exception, request, response))) {
-                            cryer.reportError(exception, request, response);
-                            response[reportedErrorKey] = true;
-                        }
-                    }
-                    // Re-throw the exception to let NestJS handle the response
-                    throw exception;
-                }));
+        var CryerFilter = _classThis = class {
+            catch(exception, host) {
+                const contextType = host.getType();
+                // Handle different context types
+                switch (contextType) {
+                    case 'http':
+                        this.handleHttpException(exception, host);
+                        break;
+                    case 'rpc':
+                        this.handleRpcException(exception, host);
+                        break;
+                    case 'ws':
+                        this.handleWsException(exception, host);
+                        break;
+                    default:
+                        this.handleGenericException(exception, host);
+                }
+            }
+            /**
+             * Handle HTTP exceptions (REST APIs)
+             */
+            handleHttpException(exception, host) {
+                const ctx = host.switchToHttp();
+                const request = ctx.getRequest();
+                const response = ctx.getResponse();
+                // Extract status and message
+                const status = exception instanceof common_1.HttpException
+                    ? exception.getStatus()
+                    : (exception === null || exception === void 0 ? void 0 : exception.status) || (exception === null || exception === void 0 ? void 0 : exception.statusCode) || common_1.HttpStatus.INTERNAL_SERVER_ERROR;
+                const error = exception instanceof Error
+                    ? exception
+                    : new Error(String(exception));
+                // Determine severity
+                let severity = 'medium';
+                if (status >= 500) {
+                    severity = 'critical';
+                }
+                else if (status >= 400) {
+                    severity = 'high';
+                }
+                error.severity = severity;
+                // Add breadcrumb
+                cryer.addBreadcrumb({
+                    message: `HTTP Error ${status}: ${error.message}`,
+                    level: 'error',
+                    category: 'http',
+                    data: {
+                        statusCode: status,
+                        path: request.url,
+                        method: request.method,
+                    },
+                });
+                // Report error
+                cryer.reportError(error, request, response);
+                // Send response
+                const errorResponse = {
+                    statusCode: status,
+                    timestamp: new Date().toISOString(),
+                    path: request.url,
+                    message: exception instanceof common_1.HttpException
+                        ? exception.getResponse()
+                        : (exception === null || exception === void 0 ? void 0 : exception.message) || 'Internal server error',
+                };
+                response.status(status).json(errorResponse);
+            }
+            /**
+             * Handle RPC/Microservice exceptions
+             */
+            handleRpcException(exception, host) {
+                const error = exception instanceof Error
+                    ? exception
+                    : new Error(String(exception));
+                error.severity = 'high';
+                cryer.addBreadcrumb({
+                    message: `RPC Error: ${error.message}`,
+                    level: 'error',
+                    category: 'rpc',
+                });
+                cryer.reportError(error);
+                // Re-throw for RPC error handling
+                throw exception;
+            }
+            /**
+             * Handle WebSocket exceptions
+             */
+            handleWsException(exception, host) {
+                const client = host.switchToWs().getClient();
+                const data = host.switchToWs().getData();
+                const error = exception instanceof Error
+                    ? exception
+                    : new Error(String(exception));
+                error.severity = 'high';
+                cryer.addBreadcrumb({
+                    message: `WebSocket Error: ${error.message}`,
+                    level: 'error',
+                    category: 'websocket',
+                    data: {
+                        event: data === null || data === void 0 ? void 0 : data.event,
+                    },
+                });
+                cryer.reportError(error);
+                // Emit error to client
+                client.emit('error', {
+                    message: error.message,
+                    timestamp: new Date().toISOString(),
+                });
+            }
+            /**
+             * Handle generic exceptions
+             */
+            handleGenericException(exception, host) {
+                const error = exception instanceof Error
+                    ? exception
+                    : new Error(String(exception));
+                error.severity = 'critical';
+                cryer.addBreadcrumb({
+                    message: `Unhandled Error: ${error.message}`,
+                    level: 'error',
+                    category: 'error',
+                });
+                cryer.reportError(error);
             }
         };
-        __setFunctionName(_classThis, "UnifiedCryerInterceptor");
+        __setFunctionName(_classThis, "CryerFilter");
         (() => {
             const _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create(null) : void 0;
             __esDecorate(null, _classDescriptor = { value: _classThis }, _classDecorators, { kind: "class", name: _classThis.name, metadata: _metadata }, null, _classExtraInitializers);
-            UnifiedCryerInterceptor = _classThis = _classDescriptor.value;
+            CryerFilter = _classThis = _classDescriptor.value;
             if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
             __runInitializers(_classThis, _classExtraInitializers);
         })();
-        return UnifiedCryerInterceptor = _classThis;
+        return CryerFilter = _classThis;
     })();
-    return UnifiedCryerInterceptor;
+    return CryerFilter;
 }
-// Usage in your application
-// const GlobalCryerInterceptor = createCryerInterceptor({
-//   apiKey: process.env.CRYER_API_KEY,
-//   environment: 'development',
-//   tags: ['test-nest']
-// });
-// app.useGlobalInterceptors(new GlobalCryerInterceptor());

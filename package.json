@@ -1,33 +1,61 @@
 {
     "name": "cryer",
-    "version": "0.1.0",
-    "description": "Error reporting middleware for Node.js applications",
+    "version": "1.0.0",
+    "description": "AI-powered error monitoring library for Node.js applications with automatic error reporting, context tracking, and intelligent error grouping",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
     "scripts": {
         "build": "tsc",
-        "test": "jest"
+        "test": "jest",
+        "prepublishOnly": "npm run build"
     },
     "keywords": [
         "error",
+        "monitoring",
         "reporting",
         "middleware",
         "express",
-        "nest"
+        "nestjs",
+        "error-tracking",
+        "error-monitoring",
+        "ai",
+        "crash-reporting",
+        "logging",
+        "debugging"
     ],
     "author": "David Ezeh",
     "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/KingDavidsHub/cryer-js.git"
+    },
+    "bugs": {
+        "url": "https://github.com/KingDavidsHub/cryer-js/issues"
+    },
+    "homepage": "https://github.com/KingDavidsHub/cryer-js#readme",
+    "files": [
+        "dist",
+        "README.md",
+        "LICENSE"
+    ],
     "devDependencies": {
         "@types/express": "^4.17.17",
+        "@types/jest": "^30.0.0",
         "@types/node": "^18.15.11",
         "jest": "^29.5.0",
         "ts-jest": "^29.1.0",
         "typescript": "^5.0.4"
     },
     "peerDependencies": {
+        "@nestjs/common": ">=9.0.0 || >=10.0.0 || >=11.0.0",
         "express": ">=4.0.0"
     },
-    "dependencies": {
-        "@nestjs/common": "^11.0.13"
+    "peerDependenciesMeta": {
+        "express": {
+            "optional": true
+        },
+        "@nestjs/common": {
+            "optional": true
+        }
     }
 }
