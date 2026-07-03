@@ -1,11 +1,11 @@
-# Cryer
+# Oluso
 
 AI-powered error monitoring library for Node.js applications with automatic error reporting, context tracking, and intelligent error grouping.
 
 ## Installation
 
 ```bash
-npm install cryer
+npm install oluso
 ```
 
 ## Features
@@ -21,17 +21,17 @@ npm install cryer
 
 ## Usage with Express
 
-Inject Cryer as a single middleware. It handles both request tracking and global error catching.
+Inject Oluso as a single middleware. It handles both request tracking and global error catching.
 
 ```typescript
 import express from 'express';
-import { cryerExpress } from 'cryer';
+import { olusoExpress } from 'oluso';
 
 const app = express();
 app.use(express.json());
 
-// Add Cryer middleware (early in the chain)
-app.use(cryerExpress({
+// Add Oluso middleware (early in the chain)
+app.use(olusoExpress({
   apiKey: 'your-api-key',
   environment: 'production',
   sensitiveKeys: ['password', 'card_number'] // Optional custom sanitization
@@ -46,18 +46,18 @@ app.listen(3000);
 
 ## Usage with NestJS
 
-Use the `CryerExceptionFilter` to capture errors globally across HTTP, WebSockets, and RPC.
+Use the `OlusoExceptionFilter` to capture errors globally across HTTP, WebSockets, and RPC.
 
 ```typescript
 import { Module } from '@nestjs/common';
 import { APP_FILTER } from '@nestjs/core';
-import { CryerExceptionFilter } from 'cryer';
+import { OlusoExceptionFilter } from 'oluso';
 
 @Module({
   providers: [
     {
       provide: APP_FILTER,
-      useClass: CryerExceptionFilter({
+      useClass: OlusoExceptionFilter({
         apiKey: 'your-api-key',
         environment: 'production',
         tags: ['nest-api']
@@ -71,19 +71,19 @@ export class AppModule {}
 ## Manual Reporting & Context
 
 ```typescript
-import { Cryer } from 'cryer';
+import { Oluso } from 'oluso';
 
-const cryer = new Cryer({ apiKey: 'your-api-key' });
+const oluso = new Oluso({ apiKey: 'your-api-key' });
 
 // Add breadcrumbs for debugging trails
-cryer.addBreadcrumb({
+oluso.addBreadcrumb({
   message: 'User started checkout',
   category: 'action',
   data: { cartId: '123' }
 });
 
 // Set user context
-cryer.setUserContext({
+oluso.setUserContext({
   id: 'user_456',
   email: 'user@example.com'
 });
@@ -91,14 +91,14 @@ cryer.setUserContext({
 try {
   doWork();
 } catch (error) {
-  cryer.captureException(error, { custom_meta: 'extra-info' });
+  oluso.captureException(error, { custom_meta: 'extra-info' });
 }
 ```
 
 ## Advanced Configuration
 
 ```typescript
-const cryer = new Cryer({
+const oluso = new Oluso({
   apiKey: 'your-api-key',
   environment: 'staging',
   defaultSeverity: 'medium',

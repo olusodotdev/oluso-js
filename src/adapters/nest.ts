@@ -1,5 +1,5 @@
-import { Cryer } from '../index';
-import { CryerOptions } from '../types';
+import { Oluso } from '../index';
+import { OlusoOptions } from '../types';
 import {
   ExceptionFilter,
   Catch,
@@ -10,18 +10,18 @@ import {
 } from '@nestjs/common';
 
 /**
- * Create a NestJS exception filter for Cryer error monitoring
+ * Create a NestJS exception filter for Oluso error monitoring
  * 
  * Usage in your module:
  * ```typescript
  * import { APP_FILTER } from '@nestjs/core';
- * import { CryerExceptionFilter } from 'cryer';
+ * import { OlusoExceptionFilter } from 'oluso';
  * 
  * @Module({
  *   providers: [
  *     {
  *       provide: APP_FILTER,
- *       useClass: CryerExceptionFilter({
+ *       useClass: OlusoExceptionFilter({
  *         apiKey: 'your-api-key',
  *         environment: 'production'
  *       })
@@ -31,12 +31,12 @@ import {
  * export class AppModule {}
  * ```
  */
-export function CryerExceptionFilter(options: CryerOptions) {
-  const cryer = new Cryer(options);
+export function OlusoExceptionFilter(options: OlusoOptions) {
+  const oluso = new Oluso(options);
 
   @Catch()
   @Injectable()
-  class CryerFilter implements ExceptionFilter {
+  class OlusoFilter implements ExceptionFilter {
     catch(exception: unknown, host: ArgumentsHost) {
       const contextType = host.getType();
 
@@ -84,7 +84,7 @@ export function CryerExceptionFilter(options: CryerOptions) {
       (error as any).severity = severity;
 
       // Add breadcrumb
-      cryer.addBreadcrumb({
+      oluso.addBreadcrumb({
         message: `HTTP Error ${status}: ${error.message}`,
         level: 'error',
         category: 'http',
@@ -96,7 +96,7 @@ export function CryerExceptionFilter(options: CryerOptions) {
       });
 
       // Report error
-      cryer.reportError(error, request, response);
+      oluso.reportError(error, request, response);
 
       // Send response
       const errorResponse = {
@@ -121,13 +121,13 @@ export function CryerExceptionFilter(options: CryerOptions) {
 
       (error as any).severity = 'high';
 
-      cryer.addBreadcrumb({
+      oluso.addBreadcrumb({
         message: `RPC Error: ${error.message}`,
         level: 'error',
         category: 'rpc',
       });
 
-      cryer.reportError(error);
+      oluso.reportError(error);
 
       // Re-throw for RPC error handling
       throw exception;
@@ -146,7 +146,7 @@ export function CryerExceptionFilter(options: CryerOptions) {
 
       (error as any).severity = 'high';
 
-      cryer.addBreadcrumb({
+      oluso.addBreadcrumb({
         message: `WebSocket Error: ${error.message}`,
         level: 'error',
         category: 'websocket',
@@ -155,7 +155,7 @@ export function CryerExceptionFilter(options: CryerOptions) {
         },
       });
 
-      cryer.reportError(error);
+      oluso.reportError(error);
 
       // Emit error to client
       client.emit('error', {
@@ -174,18 +174,18 @@ export function CryerExceptionFilter(options: CryerOptions) {
 
       (error as any).severity = 'critical';
 
-      cryer.addBreadcrumb({
+      oluso.addBreadcrumb({
         message: `Unhandled Error: ${error.message}`,
         level: 'error',
         category: 'error',
       });
 
-      cryer.reportError(error);
+      oluso.reportError(error);
     }
   }
 
-  return CryerFilter;
+  return OlusoFilter;
 }
 
 // Export for backward compatibility
-export { CryerExceptionFilter as createCryerInterceptor };
+export { OlusoExceptionFilter as createOlusoInterceptor };

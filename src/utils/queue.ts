@@ -18,7 +18,7 @@ export class OfflineQueue {
         this.maxSize = maxSize;
 
         // Use temp directory for queue storage
-        const tempDir = queueDir || path.join(require('os').tmpdir(), 'cryer-queue');
+        const tempDir = queueDir || path.join(require('os').tmpdir(), 'oluso-queue');
         if (!fs.existsSync(tempDir)) {
             try {
                 fs.mkdirSync(tempDir, { recursive: true });

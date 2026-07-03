@@ -38,23 +38,23 @@ var __setFunctionName = (this && this.__setFunctionName) || function (f, name, p
     return Object.defineProperty(f, "name", { configurable: true, value: prefix ? "".concat(prefix, " ", name) : name });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.CryerExceptionFilter = CryerExceptionFilter;
-exports.createCryerInterceptor = CryerExceptionFilter;
+exports.OlusoExceptionFilter = OlusoExceptionFilter;
+exports.createOlusoInterceptor = OlusoExceptionFilter;
 const index_1 = require("../index");
 const common_1 = require("@nestjs/common");
 /**
- * Create a NestJS exception filter for Cryer error monitoring
+ * Create a NestJS exception filter for Oluso error monitoring
  *
  * Usage in your module:
  * ```typescript
  * import { APP_FILTER } from '@nestjs/core';
- * import { CryerExceptionFilter } from 'cryer';
+ * import { OlusoExceptionFilter } from 'oluso';
  *
  * @Module({
  *   providers: [
  *     {
  *       provide: APP_FILTER,
- *       useClass: CryerExceptionFilter({
+ *       useClass: OlusoExceptionFilter({
  *         apiKey: 'your-api-key',
  *         environment: 'production'
  *       })
@@ -64,14 +64,14 @@ const common_1 = require("@nestjs/common");
  * export class AppModule {}
  * ```
  */
-function CryerExceptionFilter(options) {
-    const cryer = new index_1.Cryer(options);
-    let CryerFilter = (() => {
+function OlusoExceptionFilter(options) {
+    const oluso = new index_1.Oluso(options);
+    let OlusoFilter = (() => {
         let _classDecorators = [(0, common_1.Catch)(), (0, common_1.Injectable)()];
         let _classDescriptor;
         let _classExtraInitializers = [];
         let _classThis;
-        var CryerFilter = _classThis = class {
+        var OlusoFilter = _classThis = class {
             catch(exception, host) {
                 const contextType = host.getType();
                 // Handle different context types
@@ -113,7 +113,7 @@ function CryerExceptionFilter(options) {
                 }
                 error.severity = severity;
                 // Add breadcrumb
-                cryer.addBreadcrumb({
+                oluso.addBreadcrumb({
                     message: `HTTP Error ${status}: ${error.message}`,
                     level: 'error',
                     category: 'http',
@@ -124,7 +124,7 @@ function CryerExceptionFilter(options) {
                     },
                 });
                 // Report error
-                cryer.reportError(error, request, response);
+                oluso.reportError(error, request, response);
                 // Send response
                 const errorResponse = {
                     statusCode: status,
@@ -144,12 +144,12 @@ function CryerExceptionFilter(options) {
                     ? exception
                     : new Error(String(exception));
                 error.severity = 'high';
-                cryer.addBreadcrumb({
+                oluso.addBreadcrumb({
                     message: `RPC Error: ${error.message}`,
                     level: 'error',
                     category: 'rpc',
                 });
-                cryer.reportError(error);
+                oluso.reportError(error);
                 // Re-throw for RPC error handling
                 throw exception;
             }
@@ -163,7 +163,7 @@ function CryerExceptionFilter(options) {
                     ? exception
                     : new Error(String(exception));
                 error.severity = 'high';
-                cryer.addBreadcrumb({
+                oluso.addBreadcrumb({
                     message: `WebSocket Error: ${error.message}`,
                     level: 'error',
                     category: 'websocket',
@@ -171,7 +171,7 @@ function CryerExceptionFilter(options) {
                         event: data === null || data === void 0 ? void 0 : data.event,
                     },
                 });
-                cryer.reportError(error);
+                oluso.reportError(error);
                 // Emit error to client
                 client.emit('error', {
                     message: error.message,
@@ -186,23 +186,23 @@ function CryerExceptionFilter(options) {
                     ? exception
                     : new Error(String(exception));
                 error.severity = 'critical';
-                cryer.addBreadcrumb({
+                oluso.addBreadcrumb({
                     message: `Unhandled Error: ${error.message}`,
                     level: 'error',
                     category: 'error',
                 });
-                cryer.reportError(error);
+                oluso.reportError(error);
             }
         };
-        __setFunctionName(_classThis, "CryerFilter");
+        __setFunctionName(_classThis, "OlusoFilter");
         (() => {
             const _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create(null) : void 0;
             __esDecorate(null, _classDescriptor = { value: _classThis }, _classDecorators, { kind: "class", name: _classThis.name, metadata: _metadata }, null, _classExtraInitializers);
-            CryerFilter = _classThis = _classDescriptor.value;
+            OlusoFilter = _classThis = _classDescriptor.value;
             if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
             __runInitializers(_classThis, _classExtraInitializers);
         })();
-        return CryerFilter = _classThis;
+        return OlusoFilter = _classThis;
     })();
-    return CryerFilter;
+    return OlusoFilter;
 }

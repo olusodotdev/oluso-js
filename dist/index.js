@@ -17,7 +17,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Cryer = void 0;
+exports.Oluso = void 0;
 const https_1 = require("./utils/https");
 const context_1 = __importDefault(require("./utils/context"));
 const sanitizer_1 = __importDefault(require("./utils/sanitizer"));
@@ -27,9 +27,9 @@ const queue_1 = __importDefault(require("./utils/queue"));
 __exportStar(require("./types"), exports);
 __exportStar(require("./adapters/express"), exports);
 __exportStar(require("./adapters/nest"), exports);
-class Cryer {
+class Oluso {
     constructor(options) {
-        this.reportUrl = 'https://crier-test.onrender.com/api/v1/error/report';
+        this.reportUrl = 'http://localhost:8080/api/v1/error/report';
         this.globalHandlersRegistered = false;
         // Set default options
         this.options = {
@@ -178,13 +178,13 @@ class Cryer {
         // Check rate limit
         if (!this.rateLimiter.canSend()) {
             if (this.options.logToConsole) {
-                console.warn('[Cryer] Rate limit exceeded, error not reported');
+                console.warn('[Oluso] Rate limit exceeded, error not reported');
             }
             return Promise.resolve();
         }
         // Log to console if enabled
         if (this.options.logToConsole) {
-            console.error('[Cryer]', error);
+            console.error('[Oluso]', error);
         }
         // Build error context
         const context = this.buildErrorContext(req, res);
@@ -317,4 +317,4 @@ class Cryer {
         return this.contextManager;
     }
 }
-exports.Cryer = Cryer;
+exports.Oluso = Oluso;

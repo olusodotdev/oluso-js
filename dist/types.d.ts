@@ -1,5 +1,5 @@
-export interface CryerOptions {
-    /** API key for authentication (will be sent as x-cryer-signature header) */
+export interface OlusoOptions {
+    /** API key for authentication (will be sent as x-oluso-signature header) */
     apiKey: string;
     /** Environment name (development, production, staging, etc.) */
     environment?: string;

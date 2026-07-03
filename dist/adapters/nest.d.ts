@@ -1,18 +1,18 @@
-import { CryerOptions } from '../types';
+import { OlusoOptions } from '../types';
 import { ArgumentsHost } from '@nestjs/common';
 /**
- * Create a NestJS exception filter for Cryer error monitoring
+ * Create a NestJS exception filter for Oluso error monitoring
  *
  * Usage in your module:
  * ```typescript
  * import { APP_FILTER } from '@nestjs/core';
- * import { CryerExceptionFilter } from 'cryer';
+ * import { OlusoExceptionFilter } from 'oluso';
  *
  * @Module({
  *   providers: [
  *     {
  *       provide: APP_FILTER,
- *       useClass: CryerExceptionFilter({
+ *       useClass: OlusoExceptionFilter({
  *         apiKey: 'your-api-key',
  *         environment: 'production'
  *       })
@@ -22,7 +22,7 @@ import { ArgumentsHost } from '@nestjs/common';
  * export class AppModule {}
  * ```
  */
-export declare function CryerExceptionFilter(options: CryerOptions): {
+export declare function OlusoExceptionFilter(options: OlusoOptions): {
     new (): {
         catch(exception: unknown, host: ArgumentsHost): void;
         /**
@@ -43,4 +43,4 @@ export declare function CryerExceptionFilter(options: CryerOptions): {
         handleGenericException(exception: unknown, host: ArgumentsHost): void;
     };
 };
-export { CryerExceptionFilter as createCryerInterceptor };
+export { OlusoExceptionFilter as createOlusoInterceptor };

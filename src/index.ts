@@ -1,4 +1,4 @@
-import { CryerOptions, ErrorReport, Breadcrumb, UserContext, ErrorContext } from './types';
+import { OlusoOptions, ErrorReport, Breadcrumb, UserContext, ErrorContext } from './types';
 import { sendErrorReport } from './utils/https';
 import ContextManager from './utils/context';
 import Sanitizer from './utils/sanitizer';
@@ -10,16 +10,16 @@ export * from './types';
 export * from './adapters/express';
 export * from './adapters/nest';
 
-export class Cryer {
-  private options: CryerOptions;
-  private reportUrl = 'https://crier-test.onrender.com/api/v1/error/report';
+export class Oluso {
+  private options: OlusoOptions;
+  private reportUrl = 'http://localhost:8080/api/v1/error/report';
   private contextManager: ContextManager;
   private sanitizer: Sanitizer;
   private rateLimiter: RateLimiter;
   private offlineQueue: OfflineQueue;
   private globalHandlersRegistered = false;
 
-  constructor(options: CryerOptions) {
+  constructor(options: OlusoOptions) {
     // Set default options
     this.options = {
       logToConsole: true,
@@ -181,14 +181,14 @@ export class Cryer {
     // Check rate limit
     if (!this.rateLimiter.canSend()) {
       if (this.options.logToConsole) {
-        console.warn('[Cryer] Rate limit exceeded, error not reported');
+        console.warn('[Oluso] Rate limit exceeded, error not reported');
       }
       return Promise.resolve();
     }
 
     // Log to console if enabled
     if (this.options.logToConsole) {
-      console.error('[Cryer]', error);
+      console.error('[Oluso]', error);
     }
 
     // Build error context

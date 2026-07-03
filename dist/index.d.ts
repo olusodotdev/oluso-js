@@ -1,9 +1,9 @@
-import { CryerOptions, Breadcrumb, UserContext } from './types';
+import { OlusoOptions, Breadcrumb, UserContext } from './types';
 import ContextManager from './utils/context';
 export * from './types';
 export * from './adapters/express';
 export * from './adapters/nest';
-export declare class Cryer {
+export declare class Oluso {
     private options;
     private reportUrl;
     private contextManager;
@@ -11,7 +11,7 @@ export declare class Cryer {
     private rateLimiter;
     private offlineQueue;
     private globalHandlersRegistered;
-    constructor(options: CryerOptions);
+    constructor(options: OlusoOptions);
     private registerGlobalHandlers;
     /**
      * Add a breadcrumb to track events leading to errors

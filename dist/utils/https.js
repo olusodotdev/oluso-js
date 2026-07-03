@@ -20,7 +20,7 @@ function sendErrorReport(reportUrl, errorReport, options) {
                 headers: {
                     'Content-Type': 'application/json',
                     'Content-Length': Buffer.byteLength(data),
-                    'x-cryer-signature': options.apiKey
+                    'x-oluso-signature': options.apiKey
                 },
                 timeout: options.timeout || 5000
             };
@@ -32,28 +32,29 @@ function sendErrorReport(reportUrl, errorReport, options) {
                 });
                 res.on('end', () => {
                     if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
+                        console.log('[Oluso] Error report sent successfully');
                         resolve();
                     }
                     else {
-                        console.error(`[Cryer] Error reporting failed with status ${res.statusCode}: ${responseData}`);
+                        console.error(`[Oluso] Error reporting failed with status ${res.statusCode}: ${responseData}`);
                         resolve(); // Don't reject as we don't want error reporting failures to break the app
                     }
                 });
             });
             req.on('error', (err) => {
-                console.error('[Cryer] Failed to send error report:', err.message);
+                console.error('[Oluso] Failed to send error report:', err.message);
                 resolve();
             });
             req.on('timeout', () => {
                 req.destroy();
-                console.error('[Cryer] Timeout when sending error report');
+                console.error('[Oluso] Timeout when sending error report');
                 resolve();
             });
             req.write(data);
             req.end();
         }
         catch (err) {
-            console.error('[Cryer] Exception when sending error report:', err);
+            console.error('[Oluso] Exception when sending error report:', err);
             resolve();
         }
     });

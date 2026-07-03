@@ -1,9 +1,9 @@
-import { Cryer } from '../index';
-import { CryerOptions } from '../types';
+import { Oluso } from '../index';
+import { OlusoOptions } from '../types';
 import { Request, Response, NextFunction } from 'express';
 
 /**
- * Express middleware for Cryer error monitoring
+ * Express middleware for Oluso error monitoring
  * 
  * This middleware automatically detects whether it's being called as:
  * - Regular middleware (3 params): Tracks request context and response times
@@ -11,15 +11,15 @@ import { Request, Response, NextFunction } from 'express';
  * 
  * Usage:
  * ```
- * app.use(cryerExpress(options));
+ * app.use(olusoExpress(options));
  * ```
  */
-export function cryerExpress(options: CryerOptions) {
-  const cryer = new Cryer(options);
-  const contextManager = cryer.getContextManager();
+export function olusoExpress(options: OlusoOptions) {
+  const oluso = new Oluso(options);
+  const contextManager = oluso.getContextManager();
 
   // Return a middleware that handles both regular requests and errors
-  return function cryerMiddleware(
+  return function olusoMiddleware(
     err: any,
     req: Request | Response,
     res: Response | NextFunction,
@@ -35,14 +35,14 @@ export function cryerExpress(options: CryerOptions) {
       const response = res as Response;
       const nextFn = next as NextFunction;
 
-      handleError(cryer, contextManager, error, request, response, nextFn, options);
+      handleError(oluso, contextManager, error, request, response, nextFn, options);
     } else {
       // Called as regular middleware: (req, res, next)
       const request = err as any as Request;
       const response = req as any as Response;
       const nextFn = res as any as NextFunction;
 
-      handleRequest(cryer, contextManager, request, response, nextFn);
+      handleRequest(oluso, contextManager, request, response, nextFn);
     }
   };
 }
@@ -51,7 +51,7 @@ export function cryerExpress(options: CryerOptions) {
  * Handle regular requests - track context and monitor responses
  */
 function handleRequest(
-  cryer: Cryer,
+  oluso: Oluso,
   contextManager: any,
   req: Request,
   res: Response,
@@ -63,7 +63,7 @@ function handleRequest(
     contextManager.setRequestStartTime(Date.now());
 
     // Add breadcrumb for incoming request
-    cryer.addBreadcrumb({
+    oluso.addBreadcrumb({
       message: `${req.method} ${req.path}`,
       level: 'info',
       category: 'http',
@@ -88,7 +88,7 @@ function handleRequest(
         errorReported = true;
         const serverError = new Error(`Server error: ${res.statusCode} - ${req.method} ${req.path}`);
         (serverError as any).severity = 'critical';
-        cryer.reportError(serverError, req, res);
+        oluso.reportError(serverError, req, res);
       }
       return originalSend.call(this, body);
     };
@@ -99,7 +99,7 @@ function handleRequest(
         errorReported = true;
         const serverError = new Error(`Server error: ${res.statusCode} - ${req.method} ${req.path}`);
         (serverError as any).severity = 'critical';
-        cryer.reportError(serverError, req, res);
+        oluso.reportError(serverError, req, res);
       }
       return originalJson.call(this, body);
     };
@@ -110,7 +110,7 @@ function handleRequest(
         errorReported = true;
         const serverError = new Error(`Server error: ${res.statusCode} - ${req.method} ${req.path}`);
         (serverError as any).severity = 'critical';
-        cryer.reportError(serverError, req, res);
+        oluso.reportError(serverError, req, res);
       }
       return originalEnd.apply(this, args as any);
     };
@@ -120,7 +120,7 @@ function handleRequest(
       const startTime = contextManager.getRequestStartTime();
       const duration = startTime ? Date.now() - startTime : 0;
 
-      cryer.addBreadcrumb({
+      oluso.addBreadcrumb({
         message: `Response ${res.statusCode} - ${req.method} ${req.path}`,
         level: res.statusCode >= 400 ? 'error' : 'info',
         category: 'http',
@@ -139,13 +139,13 @@ function handleRequest(
  * Handle errors - capture and report
  */
 function handleError(
-  cryer: Cryer,
+  oluso: Oluso,
   contextManager: any,
   err: Error,
   req: Request,
   res: Response,
   next: NextFunction,
-  options: CryerOptions
+  options: OlusoOptions
 ) {
   // Determine status code and severity
   const statusCode = res.statusCode !== 200 ? res.statusCode : 500;
@@ -166,7 +166,7 @@ function handleError(
   (err as any).severity = severity;
 
   // Add breadcrumb for error
-  cryer.addBreadcrumb({
+  oluso.addBreadcrumb({
     message: `Error: ${err.message}`,
     level: 'error',
     category: 'error',
@@ -177,7 +177,7 @@ function handleError(
   });
 
   // Report the error
-  cryer.reportError(err, req, res);
+  oluso.reportError(err, req, res);
 
   // Pass to next error handler
   next(err);

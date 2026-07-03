@@ -1,7 +1,7 @@
-import { CryerOptions } from '../types';
+import { OlusoOptions } from '../types';
 import { Request, Response, NextFunction } from 'express';
 /**
- * Express middleware for Cryer error monitoring
+ * Express middleware for Oluso error monitoring
  *
  * This middleware automatically detects whether it's being called as:
  * - Regular middleware (3 params): Tracks request context and response times
@@ -9,7 +9,7 @@ import { Request, Response, NextFunction } from 'express';
  *
  * Usage:
  * ```
- * app.use(cryerExpress(options));
+ * app.use(olusoExpress(options));
  * ```
  */
-export declare function cryerExpress(options: CryerOptions): (err: any, req: Request | Response, res: Response | NextFunction, next?: NextFunction) => void;
+export declare function olusoExpress(options: OlusoOptions): (err: any, req: Request | Response, res: Response | NextFunction, next?: NextFunction) => void;

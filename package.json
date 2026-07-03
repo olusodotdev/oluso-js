@@ -1,5 +1,5 @@
 {
-    "name": "cryer",
+    "name": "oluso",
     "version": "1.0.0",
     "description": "AI-powered error monitoring library for Node.js applications with automatic error reporting, context tracking, and intelligent error grouping",
     "main": "dist/index.js",
