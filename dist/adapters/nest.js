@@ -41,7 +41,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.OlusoExceptionFilter = OlusoExceptionFilter;
 exports.createOlusoInterceptor = OlusoExceptionFilter;
 const index_1 = require("../index");
-const common_1 = require("@nestjs/common");
 /**
  * Create a NestJS exception filter for Oluso error monitoring
  *
@@ -65,9 +64,12 @@ const common_1 = require("@nestjs/common");
  * ```
  */
 function OlusoExceptionFilter(options) {
+    // Required lazily so pure-Express consumers aren't forced to install
+    // the optional @nestjs/common peer dependency just to import this module.
+    const { Catch, Injectable, HttpException, HttpStatus } = require('@nestjs/common');
     const oluso = new index_1.Oluso(options);
     let OlusoFilter = (() => {
-        let _classDecorators = [(0, common_1.Catch)(), (0, common_1.Injectable)()];
+        let _classDecorators = [Catch(), Injectable()];
         let _classDescriptor;
         let _classExtraInitializers = [];
         let _classThis;
@@ -97,9 +99,9 @@ function OlusoExceptionFilter(options) {
                 const request = ctx.getRequest();
                 const response = ctx.getResponse();
                 // Extract status and message
-                const status = exception instanceof common_1.HttpException
+                const status = exception instanceof HttpException
                     ? exception.getStatus()
-                    : (exception === null || exception === void 0 ? void 0 : exception.status) || (exception === null || exception === void 0 ? void 0 : exception.statusCode) || common_1.HttpStatus.INTERNAL_SERVER_ERROR;
+                    : (exception === null || exception === void 0 ? void 0 : exception.status) || (exception === null || exception === void 0 ? void 0 : exception.statusCode) || HttpStatus.INTERNAL_SERVER_ERROR;
                 const error = exception instanceof Error
                     ? exception
                     : new Error(String(exception));
@@ -130,7 +132,7 @@ function OlusoExceptionFilter(options) {
                     statusCode: status,
                     timestamp: new Date().toISOString(),
                     path: request.url,
-                    message: exception instanceof common_1.HttpException
+                    message: exception instanceof HttpException
                         ? exception.getResponse()
                         : (exception === null || exception === void 0 ? void 0 : exception.message) || 'Internal server error',
                 };

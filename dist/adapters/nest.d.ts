@@ -1,5 +1,5 @@
 import { OlusoOptions } from '../types';
-import { ArgumentsHost } from '@nestjs/common';
+import type { ArgumentsHost } from '@nestjs/common';
 /**
  * Create a NestJS exception filter for Oluso error monitoring
  *

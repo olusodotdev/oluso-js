@@ -1,13 +1,6 @@
 import { Oluso } from '../index';
 import { OlusoOptions } from '../types';
-import {
-  ExceptionFilter,
-  Catch,
-  ArgumentsHost,
-  Injectable,
-  HttpException,
-  HttpStatus
-} from '@nestjs/common';
+import type { ExceptionFilter, ArgumentsHost } from '@nestjs/common';
 
 /**
  * Create a NestJS exception filter for Oluso error monitoring
@@ -32,6 +25,9 @@ import {
  * ```
  */
 export function OlusoExceptionFilter(options: OlusoOptions) {
+  // Required lazily so pure-Express consumers aren't forced to install
+  // the optional @nestjs/common peer dependency just to import this module.
+  const { Catch, Injectable, HttpException, HttpStatus } = require('@nestjs/common');
   const oluso = new Oluso(options);
 
   @Catch()
@@ -66,7 +62,7 @@ export function OlusoExceptionFilter(options: OlusoOptions) {
 
       // Extract status and message
       const status = exception instanceof HttpException
-        ? exception.getStatus()
+        ? (exception as any).getStatus()
         : (exception as any)?.status || (exception as any)?.statusCode || HttpStatus.INTERNAL_SERVER_ERROR;
 
       const error = exception instanceof Error
@@ -104,7 +100,7 @@ export function OlusoExceptionFilter(options: OlusoOptions) {
         timestamp: new Date().toISOString(),
         path: request.url,
         message: exception instanceof HttpException
-          ? exception.getResponse()
+          ? (exception as any).getResponse()
           : (exception as any)?.message || 'Internal server error',
       };
 
