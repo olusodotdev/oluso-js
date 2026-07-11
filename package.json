@@ -4,6 +4,16 @@
     "description": "AI-powered error monitoring library for Node.js applications with automatic error reporting, context tracking, and intelligent error grouping",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "default": "./dist/index.js"
+        }
+    },
+    "engines": {
+        "node": ">=18"
+    },
+    "sideEffects": false,
     "scripts": {
         "build": "tsc",
         "test": "jest",
@@ -24,21 +34,22 @@
         "debugging"
     ],
     "author": "David Ezeh",
-    "license": "MIT",
+    "license": "Apache-2.0",
     "repository": {
         "type": "git",
-        "url": "https://github.com/KingDavidsHub/cryer-js.git"
+        "url": "git+https://github.com/olusodotdev/oluso-js.git"
     },
     "bugs": {
-        "url": "https://github.com/KingDavidsHub/cryer-js/issues"
+        "url": "https://github.com/olusodotdev/oluso-js/issues"
     },
-    "homepage": "https://github.com/KingDavidsHub/cryer-js#readme",
+    "homepage": "https://github.com/olusodotdev/oluso-js#readme",
     "files": [
         "dist",
         "README.md",
         "LICENSE"
     ],
     "devDependencies": {
+        "@nestjs/common": "^11.1.28",
         "@types/express": "^4.17.17",
         "@types/jest": "^30.0.0",
         "@types/node": "^18.15.11",
@@ -57,5 +68,8 @@
         "@nestjs/common": {
             "optional": true
         }
+    },
+    "dependencies": {
+        "tslib": "^2.8.1"
     }
 }

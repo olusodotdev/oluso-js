@@ -12,7 +12,7 @@ export * from './adapters/nest';
 
 export class Oluso {
   private options: OlusoOptions;
-  private reportUrl = 'http://localhost:8080/api/v1/error/report';
+  private reportUrl = 'https://crier-bfb4.onrender.com/api/v1/error/report';
   private contextManager: ContextManager;
   private sanitizer: Sanitizer;
   private rateLimiter: RateLimiter;

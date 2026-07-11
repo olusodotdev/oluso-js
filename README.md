@@ -125,4 +125,4 @@ Reports sent to the API include:
 
 ## License
 
-MIT
+Apache-2.0

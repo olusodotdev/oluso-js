@@ -23,7 +23,7 @@ describe('Oluso', () => {
         expect(mockSendErrorReport).toHaveBeenCalledTimes(1);
         const [url, report, options] = mockSendErrorReport.mock.calls[0];
 
-        expect(url).toBe('https://crier-test.onrender.com/api/v1/error/report');
+        expect(url).toBe((oluso as any).reportUrl);
         expect(report.message).toBe('Test error');
         expect(options.apiKey).toBe('test-api-key');
     });
