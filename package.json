@@ -1,40 +1,16 @@
 {
-    "name": "oluso",
-    "version": "1.0.0",
-    "description": "AI-powered error monitoring library for Node.js applications with automatic error reporting, context tracking, and intelligent error grouping",
-    "main": "dist/index.js",
-    "types": "dist/index.d.ts",
-    "exports": {
-        ".": {
-            "types": "./dist/index.d.ts",
-            "default": "./dist/index.js"
-        }
-    },
-    "engines": {
-        "node": ">=18"
-    },
-    "sideEffects": false,
-    "scripts": {
-        "build": "tsc",
-        "test": "jest",
-        "prepublishOnly": "npm run build"
-    },
-    "keywords": [
-        "error",
-        "monitoring",
-        "reporting",
-        "middleware",
-        "express",
-        "nestjs",
-        "error-tracking",
-        "error-monitoring",
-        "ai",
-        "crash-reporting",
-        "logging",
-        "debugging"
+    "name": "oluso-js",
+    "private": true,
+    "description": "Oluso monorepo: error monitoring SDKs for Node.js and frontend frameworks",
+    "workspaces": [
+        "packages/*"
     ],
+    "scripts": {
+        "build": "npm run build --workspaces --if-present",
+        "test": "npm run test --workspaces --if-present"
+    },
     "author": "David Ezeh",
-    "license": "Apache-2.0",
+    "license": "MIT",
     "repository": {
         "type": "git",
         "url": "git+https://github.com/olusodotdev/oluso-js.git"
@@ -42,34 +18,5 @@
     "bugs": {
         "url": "https://github.com/olusodotdev/oluso-js/issues"
     },
-    "homepage": "https://github.com/olusodotdev/oluso-js#readme",
-    "files": [
-        "dist",
-        "README.md",
-        "LICENSE"
-    ],
-    "devDependencies": {
-        "@nestjs/common": "^11.1.28",
-        "@types/express": "^4.17.17",
-        "@types/jest": "^30.0.0",
-        "@types/node": "^18.15.11",
-        "jest": "^29.5.0",
-        "ts-jest": "^29.1.0",
-        "typescript": "^5.0.4"
-    },
-    "peerDependencies": {
-        "@nestjs/common": ">=9.0.0 || >=10.0.0 || >=11.0.0",
-        "express": ">=4.0.0"
-    },
-    "peerDependenciesMeta": {
-        "express": {
-            "optional": true
-        },
-        "@nestjs/common": {
-            "optional": true
-        }
-    },
-    "dependencies": {
-        "tslib": "^2.8.1"
-    }
+    "homepage": "https://github.com/olusodotdev/oluso-js#readme"
 }
