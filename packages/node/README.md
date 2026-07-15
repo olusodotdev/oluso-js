@@ -21,7 +21,9 @@ npm install oluso
 
 ## Usage with Express
 
-Inject Oluso as a single middleware. It handles both request tracking and global error catching.
+`olusoExpress()` returns two middlewares that must be mounted at different
+points in your app -- Express dispatches request vs. error middleware based
+on each function's parameter count, so one function can't do both jobs.
 
 ```typescript
 import express from 'express';
@@ -30,19 +32,31 @@ import { olusoExpress } from 'oluso';
 const app = express();
 app.use(express.json());
 
-// Add Oluso middleware (early in the chain)
-app.use(olusoExpress({
+const oluso = olusoExpress({
   apiKey: 'your-api-key',
   environment: 'production',
   sensitiveKeys: ['password', 'card_number'] // Optional custom sanitization
-}));
+});
+
+// requestHandler first, before your routes
+app.use(oluso.requestHandler);
 
 app.get('/api/test', (req, res) => {
   throw new Error('Something went wrong!');
 });
 
+// errorHandler last, after all your routes -- Express only routes an
+// error to handlers registered after the route that produced it.
+app.use(oluso.errorHandler);
+
 app.listen(3000);
 ```
+
+Note: Express 4 does not automatically forward a rejected promise from an
+`async` route handler into error-handling middleware. For async routes,
+either catch and call `next(err)` yourself, or use a wrapper like
+`express-async-errors`/Express 5 -- otherwise a thrown/rejected error in an
+async handler never reaches `oluso.errorHandler` at all.
 
 ## Usage with NestJS
 

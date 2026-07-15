@@ -3,47 +3,43 @@ import { OlusoOptions } from '../types';
 import { Request, Response, NextFunction } from 'express';
 
 /**
- * Express middleware for Oluso error monitoring
- * 
- * This middleware automatically detects whether it's being called as:
- * - Regular middleware (3 params): Tracks request context and response times
- * - Error handler (4 params): Captures and reports errors
- * 
+ * Creates Express middleware for Oluso error monitoring.
+ *
+ * Express decides whether a middleware is a regular handler or an
+ * error handler purely by counting its declared parameters (`fn.length`) --
+ * a single function trying to serve both roles at once is never actually
+ * dispatched as a regular handler by Express, regardless of how many
+ * arguments are passed at call time. So this returns two separate,
+ * correctly-shaped middlewares that share one Oluso instance (same
+ * breadcrumb/context state across both).
+ *
  * Usage:
  * ```
- * app.use(olusoExpress(options));
+ * const oluso = olusoExpress(options);
+ * app.use(oluso.requestHandler);   // mount first, before your routes
+ * // ...your routes...
+ * app.use(oluso.errorHandler);     // mount last, after your routes
  * ```
+ *
+ * Both handlers matter: requestHandler alone will still catch any
+ * response your app sends with status >= 500, even without next(err) --
+ * but only as a synthetic "Server error: 500 - ..." message. errorHandler
+ * is what reports the *real* error object/stack, and only fires for
+ * errors that reach it (a route throwing synchronously, or an explicit
+ * next(err) call -- Express 4 does not auto-forward rejected promises
+ * from async handlers, so wrap those in try/catch + next(err) yourself).
  */
 export function olusoExpress(options: OlusoOptions) {
   const oluso = new Oluso(options);
   const contextManager = oluso.getContextManager();
 
-  // Return a middleware that handles both regular requests and errors
-  return function olusoMiddleware(
-    err: any,
-    req: Request | Response,
-    res: Response | NextFunction,
-    next?: NextFunction
-  ) {
-    // Detect if this is an error handler (4 parameters) or regular middleware (3 parameters)
-    const isErrorHandler = arguments.length === 4;
-
-    if (isErrorHandler) {
-      // Called as error handler: (err, req, res, next)
-      const error = err as Error;
-      const request = req as Request;
-      const response = res as Response;
-      const nextFn = next as NextFunction;
-
-      handleError(oluso, contextManager, error, request, response, nextFn, options);
-    } else {
-      // Called as regular middleware: (req, res, next)
-      const request = err as any as Request;
-      const response = req as any as Response;
-      const nextFn = res as any as NextFunction;
-
-      handleRequest(oluso, contextManager, request, response, nextFn);
-    }
+  return {
+    requestHandler: function olusoRequestHandler(req: Request, res: Response, next: NextFunction) {
+      handleRequest(oluso, contextManager, req, res, next);
+    },
+    errorHandler: function olusoErrorHandler(err: Error, req: Request, res: Response, next: NextFunction) {
+      handleError(oluso, contextManager, err, req, res, next, options);
+    },
   };
 }
 

@@ -29,13 +29,24 @@ describe('olusoExpress', () => {
         mockSendErrorReport.mockResolvedValue(undefined);
     });
 
-    it('as regular middleware, calls next and reports when a 5xx response is sent', () => {
-        const middleware = olusoExpress({ apiKey: 'test-api-key', logToConsole: false });
+    // Regression test for the exact bug this split fixed: Express decides
+    // regular vs. error-handling middleware purely by fn.length. A single
+    // function trying to serve both roles necessarily has length 4 (or 3),
+    // so Express would only ever dispatch it as one or the other --
+    // silently making the other mode permanently unreachable in a real app.
+    it('returns a requestHandler with arity 3 and an errorHandler with arity 4', () => {
+        const oluso = olusoExpress({ apiKey: 'test-api-key', logToConsole: false });
+        expect(oluso.requestHandler.length).toBe(3);
+        expect(oluso.errorHandler.length).toBe(4);
+    });
+
+    it('requestHandler calls next and reports when a 5xx response is sent', () => {
+        const oluso = olusoExpress({ apiKey: 'test-api-key', logToConsole: false });
         const req = makeReq();
         const res = makeRes();
         const next = jest.fn();
 
-        middleware(req, res, next);
+        oluso.requestHandler(req, res, next);
         expect(next).toHaveBeenCalledTimes(1);
 
         res.statusCode = 500;
@@ -46,27 +57,27 @@ describe('olusoExpress', () => {
         expect(report.message).toContain('Server error: 500');
     });
 
-    it('as regular middleware, does not report on a 2xx response', () => {
-        const middleware = olusoExpress({ apiKey: 'test-api-key', logToConsole: false });
+    it('requestHandler does not report on a 2xx response', () => {
+        const oluso = olusoExpress({ apiKey: 'test-api-key', logToConsole: false });
         const req = makeReq();
         const res = makeRes();
         const next = jest.fn();
 
-        middleware(req, res, next);
+        oluso.requestHandler(req, res, next);
         res.statusCode = 200;
         res.send('ok');
 
         expect(mockSendErrorReport).not.toHaveBeenCalled();
     });
 
-    it('as an error handler (4 args), reports the error and forwards to next', () => {
-        const middleware = olusoExpress({ apiKey: 'test-api-key', logToConsole: false });
+    it('errorHandler reports the error and forwards to next', () => {
+        const oluso = olusoExpress({ apiKey: 'test-api-key', logToConsole: false });
         const req = makeReq();
         const res = makeRes(200);
         const next = jest.fn();
         const error = new Error('Something went wrong');
 
-        middleware(error, req, res, next);
+        oluso.errorHandler(error, req, res, next);
 
         expect(mockSendErrorReport).toHaveBeenCalledTimes(1);
         expect(next).toHaveBeenCalledWith(error);
