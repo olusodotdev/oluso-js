@@ -1,7 +1,7 @@
 import { EnvironmentProviders, ErrorHandler, makeEnvironmentProviders } from '@angular/core';
 import { OlusoBrowserOptions, OlusoClient } from '@oluso/browser';
-import { OLUSO_CLIENT, OLUSO_OPTIONS } from './tokens';
-import { OlusoErrorHandler } from './error-handler';
+import { OLUSO_CLIENT, OLUSO_OPTIONS } from './tokens.js';
+import { OlusoErrorHandler } from './error-handler.js';
 
 /**
  * Wires Oluso into a standalone Angular app:

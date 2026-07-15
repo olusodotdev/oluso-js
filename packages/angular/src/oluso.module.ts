@@ -1,7 +1,7 @@
 import { ErrorHandler, ModuleWithProviders, NgModule } from '@angular/core';
 import { OlusoBrowserOptions, OlusoClient } from '@oluso/browser';
-import { OLUSO_CLIENT, OLUSO_OPTIONS } from './tokens';
-import { OlusoErrorHandler } from './error-handler';
+import { OLUSO_CLIENT, OLUSO_OPTIONS } from './tokens.js';
+import { OlusoErrorHandler } from './error-handler.js';
 
 /**
  * NgModule-style equivalent of `provideOluso()`, for apps that still

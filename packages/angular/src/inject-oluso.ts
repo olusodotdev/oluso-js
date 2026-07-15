@@ -1,6 +1,6 @@
 import { inject } from '@angular/core';
 import { OlusoClient } from '@oluso/browser';
-import { OLUSO_CLIENT } from './tokens';
+import { OLUSO_CLIENT } from './tokens.js';
 
 /**
  * Access the OlusoClient registered by `provideOluso()`/`OlusoModule.forRoot()`,

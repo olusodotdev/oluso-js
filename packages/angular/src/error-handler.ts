@@ -1,6 +1,6 @@
 import { ErrorHandler, Inject, Injectable } from '@angular/core';
 import { OlusoClient } from '@oluso/browser';
-import { OLUSO_CLIENT } from './tokens';
+import { OLUSO_CLIENT } from './tokens.js';
 
 /**
  * Replaces Angular's default ErrorHandler. Angular routes every error it
