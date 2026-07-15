@@ -1,6 +1,6 @@
 import { useContext } from 'react';
 import { OlusoContext } from './OlusoProvider';
-import { OlusoClient } from './client';
+import { OlusoClient } from '@oluso/browser';
 
 /**
  * Access the OlusoClient created by the nearest <OlusoProvider>, for manual

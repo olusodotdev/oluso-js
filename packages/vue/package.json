@@ -1,7 +1,7 @@
 {
-    "name": "@oluso/react",
-    "version": "1.1.0",
-    "description": "Oluso error monitoring for React applications: an error boundary, provider, and hook for automatic and manual error reporting",
+    "name": "@oluso/vue",
+    "version": "1.0.0",
+    "description": "Oluso error monitoring for Vue applications: a plugin and composable for automatic and manual error reporting",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
     "exports": {
@@ -19,8 +19,7 @@
         "error",
         "monitoring",
         "reporting",
-        "react",
-        "error-boundary",
+        "vue",
         "error-tracking",
         "error-monitoring",
         "ai",
@@ -33,12 +32,12 @@
     "repository": {
         "type": "git",
         "url": "git+https://github.com/olusodotdev/oluso-js.git",
-        "directory": "packages/react"
+        "directory": "packages/vue"
     },
     "bugs": {
         "url": "https://github.com/olusodotdev/oluso-js/issues"
     },
-    "homepage": "https://github.com/olusodotdev/oluso-js/tree/main/packages/react#readme",
+    "homepage": "https://github.com/olusodotdev/oluso-js/tree/main/packages/vue#readme",
     "files": [
         "dist",
         "README.md",
@@ -49,17 +48,15 @@
         "tslib": "^2.8.1"
     },
     "peerDependencies": {
-        "react": ">=16.8.0"
+        "vue": ">=3.0.0"
     },
     "devDependencies": {
-        "@testing-library/react": "^16.0.0",
         "@types/jest": "^30.0.0",
-        "@types/react": "^18.2.0",
+        "@vue/test-utils": "^2.4.0",
         "jest": "^29.5.0",
         "jest-environment-jsdom": "^29.5.0",
-        "react": "^18.2.0",
-        "react-dom": "^18.2.0",
         "ts-jest": "^29.1.0",
-        "typescript": "^5.0.4"
+        "typescript": "^5.0.4",
+        "vue": "^3.4.0"
     }
 }

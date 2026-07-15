@@ -6,7 +6,7 @@
         "packages/*"
     ],
     "scripts": {
-        "build": "npm run build --workspaces --if-present",
+        "build": "npm run build -w packages/core -w packages/browser -w packages/node -w packages/react-native -w packages/react -w packages/vue --if-present",
         "test": "npm run test --workspaces --if-present"
     },
     "author": "David Ezeh",

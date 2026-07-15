@@ -1,10 +1,10 @@
 import { createContext, ReactNode, useRef } from 'react';
-import { OlusoClient, OlusoReactOptions } from './client';
+import { OlusoClient, OlusoBrowserOptions } from '@oluso/browser';
 
 export const OlusoContext = createContext<OlusoClient | null>(null);
 
 export interface OlusoProviderProps {
-  options: OlusoReactOptions;
+  options: OlusoBrowserOptions;
   children: ReactNode;
 }
 

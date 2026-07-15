@@ -1,5 +1,5 @@
 import { Component, ErrorInfo, ReactNode } from 'react';
-import { OlusoClient } from './client';
+import { OlusoClient } from '@oluso/browser';
 
 export interface ErrorBoundaryProps {
   client: OlusoClient;

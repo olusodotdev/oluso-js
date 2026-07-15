@@ -14,16 +14,20 @@ import { getBrowserContext } from './browser-context';
 
 const DEFAULT_ENDPOINT = 'https://api.oluso.dev/api/v1/error/report';
 
-export interface OlusoReactOptions extends BaseOlusoOptions {}
+export interface OlusoBrowserOptions extends BaseOlusoOptions {}
 
 /**
  * Browser-side counterpart to the Node `Oluso` class. Captures errors via
  * `window`'s global error hooks instead of `process`, sends reports with
  * `fetch` instead of Node's `http`/`https` modules, and persists the offline
  * queue to `localStorage` instead of disk.
+ *
+ * Framework-agnostic — used directly by @oluso/react and @oluso/vue, since
+ * there's no meaningful platform difference between "React in a browser" and
+ * "Vue in a browser".
  */
 export class OlusoClient {
-  private options: OlusoReactOptions;
+  private options: OlusoBrowserOptions;
   private endpoint: string;
   private breadcrumbs: BreadcrumbManager;
   private sanitizer: Sanitizer;
@@ -31,7 +35,7 @@ export class OlusoClient {
   private offlineQueue: OfflineQueue;
   private globalHandlersRegistered = false;
 
-  constructor(options: OlusoReactOptions) {
+  constructor(options: OlusoBrowserOptions) {
     this.options = {
       logToConsole: true,
       timeout: 5000,

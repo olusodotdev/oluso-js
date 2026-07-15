@@ -9,6 +9,8 @@ This is a monorepo containing the Oluso SDKs:
 | [`oluso`](packages/node) | Node.js SDK — Express and NestJS adapters, plus a framework-agnostic core |
 | [`@oluso/react`](packages/react) | React SDK — error boundary, provider, and hook |
 | [`@oluso/react-native`](packages/react-native) | React Native SDK — same API as `@oluso/react`, backed by `ErrorUtils` and `AsyncStorage` |
+| [`@oluso/vue`](packages/vue) | Vue 3 SDK — plugin (`app.config.errorHandler`) and `useOluso()` composable |
+| [`@oluso/browser`](packages/browser) | Shared browser client (`OlusoClient`) used internally by `@oluso/react` and `@oluso/vue` |
 | [`@oluso/core`](packages/core) | Shared types and platform-agnostic utilities used internally by the SDKs above |
 
 ## Installation
@@ -22,6 +24,9 @@ npm install @oluso/react
 
 # React Native
 npm install @oluso/react-native
+
+# Vue frontend
+npm install @oluso/vue
 ```
 
 See each package's README for usage.

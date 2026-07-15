@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { ErrorBoundary } from '../ErrorBoundary';
-import { OlusoClient } from '../client';
+import { OlusoClient } from '@oluso/browser';
 
 function Boom(): never {
     throw new Error('render blew up');
