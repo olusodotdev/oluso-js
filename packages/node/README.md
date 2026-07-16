@@ -58,6 +58,28 @@ either catch and call `next(err)` yourself, or use a wrapper like
 `express-async-errors`/Express 5 -- otherwise a thrown/rejected error in an
 async handler never reaches `oluso.errorHandler` at all.
 
+### Cron jobs, queue workers, and other non-request code
+
+`requestHandler`/`errorHandler` only see errors that pass through Express's
+request/response cycle. A `node-cron`/BullMQ job, a `setInterval` loop, or a
+message-queue consumer is invisible to both of them -- and invisible to
+uncaught-exception reporting too, if that code catches its own errors (even
+just to log them) rather than letting them throw. The object `olusoExpress()`
+returns also exposes `captureException` (and `addBreadcrumb`/`setUserContext`/
+`setCustomContext`/`flush`) on the same instance, for exactly this case:
+
+```typescript
+const oluso = olusoExpress({ apiKey: 'your-api-key' });
+
+cron.schedule('0 21 * * *', async () => {
+  try {
+    await deleteStaleRecords();
+  } catch (err) {
+    oluso.captureException(err); // otherwise this failure is invisible
+  }
+});
+```
+
 ## Usage with NestJS
 
 Use the `OlusoExceptionFilter` to capture errors globally across HTTP, WebSockets, and RPC.

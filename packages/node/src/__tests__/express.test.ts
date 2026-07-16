@@ -84,4 +84,25 @@ describe('olusoExpress', () => {
         expect(res.status).toHaveBeenCalledWith(500);
         expect((error as any).severity).toBe('critical');
     });
+
+    // Regression test: errors from code that never runs inside Express's
+    // request/response cycle (a cron job, a queue consumer) are invisible to
+    // requestHandler/errorHandler, and invisible to the global
+    // uncaughtException/unhandledRejection handlers too if that code catches
+    // its own errors. captureException must be reachable off the same
+    // instance for that code to report explicitly.
+    it('exposes captureException/addBreadcrumb/setUserContext/setCustomContext/flush for non-Express code', async () => {
+        const oluso = olusoExpress({ apiKey: 'test-api-key', logToConsole: false });
+
+        expect(typeof oluso.captureException).toBe('function');
+        expect(typeof oluso.addBreadcrumb).toBe('function');
+        expect(typeof oluso.setUserContext).toBe('function');
+        expect(typeof oluso.setCustomContext).toBe('function');
+        expect(typeof oluso.flush).toBe('function');
+
+        await oluso.captureException(new Error('background job failed'));
+        expect(mockSendErrorReport).toHaveBeenCalledTimes(1);
+        const report = mockSendErrorReport.mock.calls[0][1];
+        expect(report.message).toBe('background job failed');
+    });
 });

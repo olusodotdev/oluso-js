@@ -28,6 +28,26 @@ import { Request, Response, NextFunction } from 'express';
  * errors that reach it (a route throwing synchronously, or an explicit
  * next(err) call -- Express 4 does not auto-forward rejected promises
  * from async handlers, so wrap those in try/catch + next(err) yourself).
+ *
+ * requestHandler/errorHandler only ever see errors that pass through
+ * Express's request/response cycle. Anything outside that -- a
+ * node-cron/BullMQ job, a setInterval loop, a message-queue consumer --
+ * is invisible to both, *and* invisible to the global uncaughtException/
+ * unhandledRejection handlers too if that code catches its own errors
+ * (even just to console.error them) rather than letting them throw/reject.
+ * captureException/addBreadcrumb/setUserContext are re-exported here, on
+ * the same Oluso instance requestHandler/errorHandler already use, so
+ * that code can still report explicitly:
+ * ```
+ * const oluso = olusoExpress(options);
+ * cron.schedule('0 21 * * *', async () => {
+ *   try {
+ *     await deleteStaleTasks();
+ *   } catch (err) {
+ *     oluso.captureException(err); // otherwise this failure is invisible
+ *   }
+ * });
+ * ```
  */
 export function olusoExpress(options: OlusoOptions) {
   const oluso = new Oluso(options);
@@ -40,6 +60,11 @@ export function olusoExpress(options: OlusoOptions) {
     errorHandler: function olusoErrorHandler(err: Error, req: Request, res: Response, next: NextFunction) {
       handleError(oluso, contextManager, err, req, res, next, options);
     },
+    captureException: oluso.captureException.bind(oluso),
+    addBreadcrumb: oluso.addBreadcrumb.bind(oluso),
+    setUserContext: oluso.setUserContext.bind(oluso),
+    setCustomContext: oluso.setCustomContext.bind(oluso),
+    flush: oluso.flush.bind(oluso),
   };
 }
 
