@@ -100,13 +100,25 @@ function handleRequest(
     const originalJson = res.json;
     const originalEnd = res.end;
 
-    // Track if error was already reported
-    let errorReported = false;
+    // Whether an error was already reported for *this response* -- stored
+    // on res itself (not a local closure variable) because handleError
+    // below runs in a separate middleware invocation but shares the same
+    // res per request. Without this shared flag, a route that throws and
+    // calls next(err) gets its real error correctly reported by
+    // handleError, then this same request's downstream res.json/send/end
+    // (once errorHandler calls next(err) onward) sees a >=500 status and
+    // fires a second, synthetic "Server error: N - ..." report for the
+    // exact same failure -- duplicating it with a report that has no
+    // connection to the real error or its stack trace.
+    const alreadyReported = () => (res as any).__olusoErrorReported === true;
+    const markReported = () => {
+      (res as any).__olusoErrorReported = true;
+    };
 
     // Override send
     res.send = function (body?: any): Response {
-      if (res.statusCode >= 500 && !errorReported) {
-        errorReported = true;
+      if (res.statusCode >= 500 && !alreadyReported()) {
+        markReported();
         const serverError = new Error(`Server error: ${res.statusCode} - ${req.method} ${req.path}`);
         (serverError as any).severity = 'critical';
         oluso.reportError(serverError, req, res);
@@ -116,8 +128,8 @@ function handleRequest(
 
     // Override json
     res.json = function (body?: any): Response {
-      if (res.statusCode >= 500 && !errorReported) {
-        errorReported = true;
+      if (res.statusCode >= 500 && !alreadyReported()) {
+        markReported();
         const serverError = new Error(`Server error: ${res.statusCode} - ${req.method} ${req.path}`);
         (serverError as any).severity = 'critical';
         oluso.reportError(serverError, req, res);
@@ -127,8 +139,8 @@ function handleRequest(
 
     // Override end
     res.end = function (...args: any[]): Response {
-      if (res.statusCode >= 500 && !errorReported) {
-        errorReported = true;
+      if (res.statusCode >= 500 && !alreadyReported()) {
+        markReported();
         const serverError = new Error(`Server error: ${res.statusCode} - ${req.method} ${req.path}`);
         (serverError as any).severity = 'critical';
         oluso.reportError(serverError, req, res);
@@ -168,8 +180,15 @@ function handleError(
   next: NextFunction,
   options: OlusoOptions
 ) {
-  // Determine status code and severity
-  const statusCode = res.statusCode !== 200 ? res.statusCode : 500;
+  // Determine status code and severity. Respect the error's own status
+  // first (e.g. a business-rule error like "insufficient stock" thrown
+  // with `.status = 409`) -- defaulting straight to 500 here, ignoring
+  // what the error itself says, was overwriting a real 409 into a 500
+  // on the response, which in turn made requestHandler's res.json/send/end
+  // wrapper (see handleRequest above) think an unreported 500-level
+  // failure had occurred and fire a second, misleading synthetic report.
+  const errStatus = (err as any).status || (err as any).statusCode;
+  const statusCode = res.statusCode !== 200 ? res.statusCode : errStatus || 500;
   let severity: 'critical' | 'high' | 'medium' | 'low' = options.defaultSeverity || 'medium';
 
   if (statusCode >= 500) {
@@ -199,6 +218,12 @@ function handleError(
 
   // Report the error
   oluso.reportError(err, req, res);
+
+  // Shares the "already reported" state with requestHandler's res.json/
+  // send/end overrides (see handleRequest above) -- without this, whatever
+  // downstream code sends the actual response after next(err) would look
+  // like an unreported >=500 failure and get a second, synthetic report.
+  (res as any).__olusoErrorReported = true;
 
   // Pass to next error handler
   next(err);
