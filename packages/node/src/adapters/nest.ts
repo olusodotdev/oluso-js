@@ -69,32 +69,31 @@ export function OlusoExceptionFilter(options: OlusoOptions) {
         ? exception
         : new Error(String(exception));
 
-      // Determine severity
-      let severity: 'critical' | 'high' | 'medium' | 'low' = 'medium';
+      // Only 5xx (and non-HTTP exceptions, which default to 500 above) are
+      // real server-side faults worth reporting. 4xx are client errors -- a
+      // 404 from an uptime/health-check `HEAD /`, a 400 from bad input, a
+      // 401/403 -- and reporting them is pure noise that would alert on every
+      // ping. Skip them entirely (the Express and Next.js adapters already
+      // report on >= 500 only; this keeps NestJS consistent). The HTTP
+      // response is still sent below for every status, reported or not.
       if (status >= 500) {
-        severity = 'critical';
-      } else if (status >= 400) {
-        severity = 'high';
+        (error as any).severity = 'critical';
+
+        oluso.addBreadcrumb({
+          message: `HTTP Error ${status}: ${error.message}`,
+          level: 'error',
+          category: 'http',
+          data: {
+            statusCode: status,
+            path: request.url,
+            method: request.method,
+          },
+        });
+
+        oluso.reportError(error, request, response);
       }
 
-      (error as any).severity = severity;
-
-      // Add breadcrumb
-      oluso.addBreadcrumb({
-        message: `HTTP Error ${status}: ${error.message}`,
-        level: 'error',
-        category: 'http',
-        data: {
-          statusCode: status,
-          path: request.url,
-          method: request.method,
-        },
-      });
-
-      // Report error
-      oluso.reportError(error, request, response);
-
-      // Send response
+      // Send response (all statuses)
       const errorResponse = {
         statusCode: status,
         timestamp: new Date().toISOString(),

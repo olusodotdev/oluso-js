@@ -29,20 +29,36 @@ describe('OlusoExceptionFilter', () => {
         mockSendErrorReport.mockResolvedValue(undefined);
     });
 
-    it('reports HttpExceptions using their declared status code', () => {
+    it('does NOT report 4xx client errors (noise: health-check 404s, expired-session 401s, bad input)', () => {
         const Filter = OlusoExceptionFilter({ apiKey: 'test-api-key', logToConsole: false });
         const filter = new Filter();
 
-        const request = { url: '/widgets', method: 'GET' };
+        const clientErrors = [
+            new HttpException('Cannot HEAD /', HttpStatus.NOT_FOUND),          // uptime/health-check ping
+            new HttpException('Your session has expired', HttpStatus.UNAUTHORIZED), // expired JWT
+            new HttpException('Bad Request', HttpStatus.BAD_REQUEST),          // client sent junk
+        ];
+
+        for (const exception of clientErrors) {
+            const response = makeResponse();
+            filter.catch(exception, makeHttpHost({ url: '/x', method: 'GET' }, response));
+            // The client still gets its proper HTTP response...
+            expect(response.status).toHaveBeenCalledWith((exception as any).getStatus());
+        }
+
+        // ...but none of these noisy client errors are reported to Oluso.
+        expect(mockSendErrorReport).not.toHaveBeenCalled();
+    });
+
+    it('reports 5xx HttpExceptions (real server faults)', () => {
+        const Filter = OlusoExceptionFilter({ apiKey: 'test-api-key', logToConsole: false });
+        const filter = new Filter();
+
         const response = makeResponse();
-        const exception = new HttpException('Not Found', HttpStatus.NOT_FOUND);
+        const exception = new HttpException('upstream down', HttpStatus.SERVICE_UNAVAILABLE);
+        filter.catch(exception, makeHttpHost({ url: '/widgets', method: 'GET' }, response));
 
-        filter.catch(exception, makeHttpHost(request, response));
-
-        expect(response.status).toHaveBeenCalledWith(404);
-        expect(response.json).toHaveBeenCalledWith(
-            expect.objectContaining({ statusCode: 404, path: '/widgets' })
-        );
+        expect(response.status).toHaveBeenCalledWith(503);
         expect(mockSendErrorReport).toHaveBeenCalledTimes(1);
     });
 
