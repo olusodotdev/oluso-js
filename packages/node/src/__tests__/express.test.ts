@@ -89,7 +89,11 @@ describe('olusoExpress', () => {
     // thrown with its own `.status = 409` used to get its response status
     // forced to 500 by errorHandler defaulting straight to 500 whenever
     // res.statusCode was still 200, ignoring what the error itself said.
-    it("errorHandler respects the error's own status code instead of defaulting to 500", () => {
+    // The response status must still be mapped correctly -- but the 4xx is
+    // no longer *reported*: a deliberate client/business-rule error is noise,
+    // filtered uniformly in reportError (see index.ts). So this now asserts
+    // the response is 409 AND that nothing was sent to Oluso.
+    it("errorHandler maps the error's own status code (409) without reporting it as a bug", () => {
         const oluso = olusoExpress({ apiKey: 'test-api-key', logToConsole: false });
         const req = makeReq();
         const res = makeRes(200);
@@ -100,8 +104,7 @@ describe('olusoExpress', () => {
         oluso.errorHandler(error, req, res, next);
 
         expect(res.status).toHaveBeenCalledWith(409);
-        const report = mockSendErrorReport.mock.calls[0][1];
-        expect(report.message).toBe('Insufficient stock for p2');
+        expect(mockSendErrorReport).not.toHaveBeenCalled();
     });
 
     // Regression test for a real duplicate-reporting bug: errorHandler and
@@ -119,8 +122,11 @@ describe('olusoExpress', () => {
         const req = makeReq();
         const res = makeRes(200);
         const next = jest.fn();
-        const error: any = new Error('Insufficient stock for p2');
-        error.status = 409;
+        // A genuine server fault (5xx) -- the double-report bug this guards
+        // only exists for reportable errors, and 4xx are now filtered out
+        // in reportError, so the scenario must use a status that reports.
+        const error: any = new Error('Upstream inventory service unavailable');
+        error.status = 503;
 
         // Mount order matches a real app: requestHandler first (installs
         // the res.json/send/end wrappers), then the route throws and
@@ -131,7 +137,7 @@ describe('olusoExpress', () => {
         res.json({ error: error.message }); // simulates the app's own final handler
 
         expect(mockSendErrorReport).toHaveBeenCalledTimes(1);
-        expect(mockSendErrorReport.mock.calls[0][1].message).toBe('Insufficient stock for p2');
+        expect(mockSendErrorReport.mock.calls[0][1].message).toBe('Upstream inventory service unavailable');
     });
 
     // Regression test: errors from code that never runs inside Express's

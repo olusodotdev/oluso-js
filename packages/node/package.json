@@ -1,6 +1,6 @@
 {
     "name": "oluso",
-    "version": "2.1.3",
+    "version": "2.1.4",
     "description": "AI-powered error monitoring library for Node.js applications with automatic error reporting, context tracking, and intelligent error grouping",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",

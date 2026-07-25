@@ -178,6 +178,25 @@ export class Oluso {
       return Promise.resolve();
     }
 
+    // Skip deliberate client/validation errors (HTTP 4xx) wherever they are
+    // captured -- not just on the HTTP request path the adapters cover. A
+    // NestJS BadRequestException / NotFoundException / UnauthorizedException
+    // thrown from a background job, cron, or a manual captureException() is a
+    // handled business-rule signal, not a server fault worth alerting on or
+    // auto-fixing. Real bugs (TypeError, a 5xx, an error with no status) carry
+    // no 4xx code and still report. Opt back in with reportClientErrors: true.
+    if (!this.options.reportClientErrors) {
+      const status = this.getErrorHttpStatus(error);
+      if (status !== undefined && status >= 400 && status < 500) {
+        if (this.options.logToConsole) {
+          console.warn(
+            `[Oluso] Skipping client error (HTTP ${status}): ${error.message}`
+          );
+        }
+        return Promise.resolve();
+      }
+    }
+
     // Check rate limit
     if (!this.rateLimiter.canSend()) {
       if (this.options.logToConsole) {
@@ -292,6 +311,24 @@ export class Oluso {
       return firstLine.length <= 100 ? firstLine : `${firstLine.substring(0, 97)}...`;
     }
     return `${error.constructor.name} Error`;
+  }
+
+  /**
+   * The HTTP-style status code an error carries about *itself*, if any: a
+   * NestJS HttpException exposes getStatus(); other libraries attach a numeric
+   * `status` / `statusCode`. Returns undefined for ordinary errors (TypeError,
+   * a DB failure, etc.), which have no such code -- those are real faults and
+   * must always report. Distinct from res.statusCode (the response's status);
+   * this is what lets 4xx filtering work off the request path too.
+   */
+  private getErrorHttpStatus(error: Error): number | undefined {
+    const anyErr = error as any;
+    if (typeof anyErr.getStatus === 'function') {
+      const status = anyErr.getStatus();
+      if (typeof status === 'number') return status;
+    }
+    const status = anyErr.status ?? anyErr.statusCode;
+    return typeof status === 'number' ? status : undefined;
   }
 
   private extractSeverity(error: Error, res?: any): string {

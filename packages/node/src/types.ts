@@ -14,6 +14,17 @@ export interface OlusoOptions {
   /** Filter function to determine if an error should be reported */
   shouldReport?: (err: Error, req?: any, res?: any) => boolean;
 
+  /**
+   * Report deliberate 4xx client/validation errors wherever they're captured
+   * (HTTP request, background job, cron, manual captureException). Default
+   * false: a NestJS BadRequestException / NotFoundException / Unauthorized-
+   * Exception (etc.) is a handled business-rule signal, not a server fault --
+   * reporting it is noise and there's nothing to auto-fix. Real bugs
+   * (TypeError, a 5xx, any error with no HTTP status) always report. Set true
+   * to capture 4xx anyway.
+   */
+  reportClientErrors?: boolean;
+
   /** Timeout in milliseconds for API calls (default: 5000) */
   timeout?: number;
 
