@@ -29,6 +29,14 @@ const DEFAULT_SENSITIVE_KEYS = [
 
 const REDACTED = '[REDACTED]';
 
+// Call hasOwnProperty off Object.prototype rather than off the value itself.
+// `value.hasOwnProperty(key)` throws "hasOwnProperty is not a function" when
+// value is a null-prototype object (Object.create(null) -- e.g. some ORM rows,
+// parsed query objects) or when a payload carries its own `hasOwnProperty`
+// key. That crash was firing inside reportError's own sanitize pass, so the
+// SDK was throwing while trying to report an unrelated error.
+const hasOwn = Object.prototype.hasOwnProperty;
+
 export class Sanitizer {
     private sensitivePatterns: RegExp[];
 
@@ -103,7 +111,7 @@ export class Sanitizer {
             // Handle regular objects
             const sanitized: any = {};
             for (const key in value) {
-                if (value.hasOwnProperty(key)) {
+                if (hasOwn.call(value, key)) {
                     if (this.isSensitiveKey(key)) {
                         sanitized[key] = REDACTED;
                     } else {
@@ -125,7 +133,7 @@ export class Sanitizer {
         const sanitized: Record<string, string> = {};
 
         for (const key in headers) {
-            if (headers.hasOwnProperty(key)) {
+            if (hasOwn.call(headers, key)) {
                 const lowerKey = key.toLowerCase();
 
                 // Always redact authorization headers
