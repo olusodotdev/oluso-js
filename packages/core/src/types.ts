@@ -43,6 +43,7 @@ export interface BaseOlusoOptions {
 }
 
 export interface ErrorReport {
+  schema_version?: number;
   title: string;
   message: string;
   stack_trace?: string;
@@ -52,6 +53,24 @@ export interface ErrorReport {
   fingerprint?: string;
   context?: ErrorContext;
   timestamp?: number;
+  exception?: ExceptionDetails;
+  sdk?: SDKInfo;
+}
+
+export interface SDKInfo {
+  name: string;
+  version?: string;
+  language: string;
+}
+
+export interface ExceptionDetails {
+  type: string;
+  message: string;
+  stack_trace?: string;
+  code?: string | number;
+  status_code?: number;
+  attributes?: Record<string, any>;
+  causes?: ExceptionDetails[];
 }
 
 export interface ErrorContext {
@@ -59,6 +78,11 @@ export interface ErrorContext {
   device?: DeviceContext;
   custom?: Record<string, any>;
   breadcrumbs?: Breadcrumb[];
+  response?: {
+    status_code?: number;
+    headers?: Record<string, string>;
+    body?: any;
+  };
 }
 
 export interface Breadcrumb {

@@ -1,6 +1,6 @@
 {
     "name": "@oluso/react",
-    "version": "1.1.0",
+    "version": "1.1.1",
     "description": "Oluso error monitoring for React applications: an error boundary, provider, and hook for automatic and manual error reporting",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
@@ -45,7 +45,7 @@
         "LICENSE"
     ],
     "dependencies": {
-        "@oluso/browser": "1.0.0",
+        "@oluso/browser": "1.0.1",
         "tslib": "^2.8.1"
     },
     "peerDependencies": {

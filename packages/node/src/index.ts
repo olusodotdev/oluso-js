@@ -5,6 +5,7 @@ import Sanitizer from './utils/sanitizer';
 import generateFingerprint from './utils/fingerprint';
 import { getServerContext, RateLimiter } from './utils/server';
 import OfflineQueue from './utils/queue';
+import { buildExceptionDetails } from './utils/diagnostics';
 
 export * from './types';
 export * from './adapters/express';
@@ -223,6 +224,7 @@ export class Oluso {
 
     // Prepare error report
     const report: ErrorReport = {
+      schema_version: 2,
       title: title,
       message: error.message,
       stack_trace: error.stack,
@@ -232,6 +234,8 @@ export class Oluso {
       fingerprint: fingerprint,
       context: context,
       timestamp: Date.now(),
+      exception: buildExceptionDetails(error, this.sanitizer),
+      sdk: { name: 'oluso-node', version: '2.1.6', language: 'javascript' },
     };
 
     // Send the report

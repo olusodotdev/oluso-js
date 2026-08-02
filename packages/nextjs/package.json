@@ -1,6 +1,6 @@
 {
     "name": "@oluso/nextjs",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "Oluso error monitoring for Next.js applications: instrumentation hooks, route/middleware wrappers, and React bindings for the App Router and Pages Router",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
@@ -52,8 +52,8 @@
         "LICENSE"
     ],
     "dependencies": {
-        "@oluso/core": "1.0.0",
-        "@oluso/react": "1.1.0",
+        "@oluso/core": "1.0.1",
+        "@oluso/react": "1.1.1",
         "tslib": "^2.8.1"
     },
     "peerDependencies": {

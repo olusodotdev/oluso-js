@@ -11,7 +11,7 @@ describe('OlusoErrorHandler', () => {
 
     it('reports errors Angular routes through ErrorHandler.handleError', async () => {
         const injector = Injector.create({
-            providers: [provideOluso({ apiKey: 'test-api-key', enableOfflineQueue: false })],
+            providers: [provideOluso({ apiKey: 'test-api-key', enableOfflineQueue: false, logToConsole: false })],
         });
 
         const handler = injector.get(ErrorHandler);
@@ -26,7 +26,7 @@ describe('OlusoErrorHandler', () => {
 
     it('normalizes non-Error values Angular sometimes passes through', async () => {
         const injector = Injector.create({
-            providers: [provideOluso({ apiKey: 'test-api-key', enableOfflineQueue: false })],
+            providers: [provideOluso({ apiKey: 'test-api-key', enableOfflineQueue: false, logToConsole: false })],
         });
 
         const handler = injector.get(ErrorHandler);

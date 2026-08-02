@@ -1,6 +1,6 @@
 {
     "name": "@oluso/vue",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "Oluso error monitoring for Vue applications: a plugin and composable for automatic and manual error reporting",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
@@ -44,7 +44,7 @@
         "LICENSE"
     ],
     "dependencies": {
-        "@oluso/browser": "1.0.0",
+        "@oluso/browser": "1.0.1",
         "tslib": "^2.8.1"
     },
     "peerDependencies": {

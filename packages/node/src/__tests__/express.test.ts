@@ -50,11 +50,23 @@ describe('olusoExpress', () => {
         expect(next).toHaveBeenCalledTimes(1);
 
         res.statusCode = 500;
-        res.json({ error: 'boom' });
+        res.json({
+            error: 'File size too large',
+            actual_bytes: 28692515,
+            maximum_bytes: 10485760,
+            access_token: 'must-not-leave-the-process',
+        });
 
         expect(mockSendErrorReport).toHaveBeenCalledTimes(1);
         const report = mockSendErrorReport.mock.calls[0][1];
         expect(report.message).toContain('Server error: 500');
+        expect(report.schema_version).toBe(2);
+        expect(report.exception.attributes.response.body).toEqual({
+            error: 'File size too large',
+            actual_bytes: 28692515,
+            maximum_bytes: 10485760,
+            access_token: '[REDACTED]',
+        });
     });
 
     it('requestHandler does not report on a 2xx response', () => {

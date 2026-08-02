@@ -17,7 +17,7 @@ describe('useOlusoErrorEffect', () => {
     const error = Object.assign(new Error('render blew up'), { digest: 'abc123' });
 
     const { rerender } = render(
-      <OlusoProvider options={{ apiKey: 'test-api-key', enableOfflineQueue: false }}>
+      <OlusoProvider options={{ apiKey: 'test-api-key', enableOfflineQueue: false, logToConsole: false }}>
         <ErrorPage error={error} />
       </OlusoProvider>
     );
@@ -29,7 +29,7 @@ describe('useOlusoErrorEffect', () => {
 
     (global.fetch as jest.Mock).mockClear();
     rerender(
-      <OlusoProvider options={{ apiKey: 'test-api-key', enableOfflineQueue: false }}>
+      <OlusoProvider options={{ apiKey: 'test-api-key', enableOfflineQueue: false, logToConsole: false }}>
         <ErrorPage error={error} />
       </OlusoProvider>
     );

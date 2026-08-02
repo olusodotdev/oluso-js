@@ -1,6 +1,6 @@
 {
     "name": "@oluso/react-native",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "Oluso error monitoring for React Native applications: an error boundary, provider, and hook for automatic and manual error reporting",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
@@ -45,13 +45,13 @@
         "LICENSE"
     ],
     "dependencies": {
-        "@oluso/core": "1.0.0",
+        "@oluso/core": "1.0.1",
         "tslib": "^2.8.1"
     },
     "peerDependencies": {
+        "@react-native-async-storage/async-storage": ">=1.0.0",
         "react": ">=16.8.0",
-        "react-native": ">=0.70.0",
-        "@react-native-async-storage/async-storage": ">=1.0.0"
+        "react-native": ">=0.70.0"
     },
     "peerDependenciesMeta": {
         "@react-native-async-storage/async-storage": {

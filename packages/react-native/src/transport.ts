@@ -3,6 +3,7 @@ import { ErrorReport } from '@oluso/core';
 interface SendOptions {
   apiKey: string;
   timeout?: number;
+  logToConsole?: boolean;
 }
 
 /**
@@ -30,12 +31,16 @@ export function sendErrorReport(
   })
     .then((res) => {
       if (!res.ok) {
-        console.error(`[Oluso] Error reporting failed with status ${res.status}`);
+        if (options.logToConsole) {
+          console.error(`[Oluso] Error reporting failed with status ${res.status}`);
+        }
         throw new Error(`Oluso reporting failed with status ${res.status}`);
       }
     })
     .catch((err) => {
-      console.error('[Oluso] Failed to send error report:', err?.message || err);
+      if (options.logToConsole) {
+        console.error('[Oluso] Failed to send error report:', err?.message || err);
+      }
       throw err;
     })
     .finally(() => {

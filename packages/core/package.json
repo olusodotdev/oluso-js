@@ -1,6 +1,6 @@
 {
     "name": "@oluso/core",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "Shared types and platform-agnostic utilities used by Oluso client SDKs",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",

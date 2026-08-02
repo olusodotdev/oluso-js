@@ -13,6 +13,7 @@ describe('OlusoClient', () => {
             apiKey: 'test-api-key',
             endpoint: 'https://example.test/api/v1/error/report',
             enableOfflineQueue: false,
+            logToConsole: false,
         });
 
         await client.captureException(new Error('Test error'));
@@ -33,7 +34,7 @@ describe('OlusoClient', () => {
             .mockResolvedValue({ ok: true });
         global.fetch = fetchMock as any;
 
-        const client = new OlusoClient({ apiKey: 'test-api-key' });
+        const client = new OlusoClient({ apiKey: 'test-api-key', logToConsole: false });
 
         await client.captureException(new Error('Test error'));
         expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -54,7 +55,7 @@ describe('OlusoClient', () => {
 
         global.fetch = jest.fn().mockResolvedValue({ ok: true }) as any;
 
-        new OlusoClient({ apiKey: 'test-api-key', enableOfflineQueue: false });
+        new OlusoClient({ apiKey: 'test-api-key', enableOfflineQueue: false, logToConsole: false });
 
         expect(setGlobalHandler).toHaveBeenCalledTimes(1);
         const registeredHandler = setGlobalHandler.mock.calls[0][0];
@@ -66,6 +67,10 @@ describe('OlusoClient', () => {
     });
 
     it('does not throw when ErrorUtils is unavailable (e.g. outside the RN runtime)', () => {
-        expect(() => new OlusoClient({ apiKey: 'test-api-key', enableOfflineQueue: false })).not.toThrow();
+        expect(() => new OlusoClient({
+            apiKey: 'test-api-key',
+            enableOfflineQueue: false,
+            logToConsole: false,
+        })).not.toThrow();
     });
 });

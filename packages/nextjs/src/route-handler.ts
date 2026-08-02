@@ -41,6 +41,14 @@ export function withOluso<Ctx = any>(oluso: Oluso, handler: RouteHandler<Ctx>): 
         if (res.status >= 500) {
           const error = new Error(`Server error: ${res.status} - ${req.method} ${url.pathname}`);
           (error as any).severity = 'critical';
+		  const body = await res.clone().text().catch(() => '');
+		  const headers: Record<string, string> = {};
+		  res.headers.forEach((value, key) => { headers[key] = value; });
+		  (error as any).response = {
+			status_code: res.status,
+			headers,
+			body,
+		  };
           await oluso.reportError(error, fromFetchRequest(req));
         }
 

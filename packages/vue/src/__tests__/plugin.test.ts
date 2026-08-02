@@ -27,7 +27,7 @@ describe('OlusoVuePlugin', () => {
         });
 
         const app = createApp(Boom);
-        app.use(OlusoVuePlugin, { apiKey: 'test-api-key', enableOfflineQueue: false });
+        app.use(OlusoVuePlugin, { apiKey: 'test-api-key', enableOfflineQueue: false, logToConsole: false });
         app.mount(document.createElement('div'));
 
         // captureException triggers an async fetch; flush microtasks/timers
@@ -51,7 +51,7 @@ describe('OlusoVuePlugin', () => {
 
         const app = createApp(Boom);
         app.config.errorHandler = previousHandler;
-        app.use(OlusoVuePlugin, { apiKey: 'test-api-key', enableOfflineQueue: false });
+        app.use(OlusoVuePlugin, { apiKey: 'test-api-key', enableOfflineQueue: false, logToConsole: false });
         app.mount(document.createElement('div'));
 
         await new Promise((resolve) => setTimeout(resolve, 0));

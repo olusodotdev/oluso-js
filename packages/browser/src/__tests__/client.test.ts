@@ -14,6 +14,7 @@ describe('OlusoClient', () => {
             apiKey: 'test-api-key',
             endpoint: 'https://example.test/api/v1/error/report',
             enableOfflineQueue: false,
+            logToConsole: false,
         });
 
         await client.captureException(new Error('Test error'));
@@ -33,6 +34,7 @@ describe('OlusoClient', () => {
         const client = new OlusoClient({
             apiKey: 'test-api-key',
             endpoint: 'https://example.test/api/v1/error/report',
+            logToConsole: false,
         });
 
         await client.captureException(new Error('Test error'));
@@ -49,6 +51,7 @@ describe('OlusoClient', () => {
         const client = new OlusoClient({
             apiKey: 'test-api-key',
             enableOfflineQueue: false,
+            logToConsole: false,
         });
 
         client.addBreadcrumb({ message: 'User clicked checkout', level: 'info' });

@@ -1,6 +1,6 @@
 {
     "name": "@oluso/browser",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "Shared browser client for Oluso error monitoring, used by @oluso/react and @oluso/vue",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
@@ -43,7 +43,7 @@
         "LICENSE"
     ],
     "dependencies": {
-        "@oluso/core": "1.0.0",
+        "@oluso/core": "1.0.1",
         "tslib": "^2.8.1"
     },
     "devDependencies": {

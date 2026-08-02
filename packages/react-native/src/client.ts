@@ -7,6 +7,7 @@ import {
   Sanitizer,
   UserContext,
   generateFingerprint,
+  buildExceptionDetails,
 } from '@oluso/core';
 import { sendErrorReport } from './transport';
 import { OfflineQueue } from './queue';
@@ -110,6 +111,7 @@ export class OlusoClient {
       sendErrorReport(this.endpoint, report, {
         apiKey: this.options.apiKey,
         timeout: this.options.timeout,
+        logToConsole: this.options.logToConsole,
       })
     );
   }
@@ -137,6 +139,7 @@ export class OlusoClient {
       : generateFingerprint(error, context);
 
     const report: ErrorReport = {
+      schema_version: 2,
       title: this.generateErrorTitle(error),
       message: error.message,
       stack_trace: error.stack,
@@ -146,6 +149,8 @@ export class OlusoClient {
       fingerprint,
       context,
       timestamp: Date.now(),
+      exception: buildExceptionDetails(error, this.sanitizer),
+      sdk: { name: '@oluso/react-native', version: '1.0.1', language: 'javascript' },
     };
 
     return this.sendReport(report);
@@ -163,6 +168,7 @@ export class OlusoClient {
       await sendErrorReport(this.endpoint, report, {
         apiKey: this.options.apiKey,
         timeout: this.options.timeout,
+        logToConsole: this.options.logToConsole,
       });
 
       if (this.options.enableOfflineQueue && !this.offlineQueue.isEmpty()) {
@@ -171,6 +177,7 @@ export class OlusoClient {
             sendErrorReport(this.endpoint, queuedReport, {
               apiKey: this.options.apiKey,
               timeout: this.options.timeout,
+              logToConsole: this.options.logToConsole,
             })
           )
           .catch(() => {

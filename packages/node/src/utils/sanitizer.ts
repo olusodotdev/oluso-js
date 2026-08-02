@@ -80,7 +80,11 @@ export class Sanitizer {
 
             // Handle primitives
             if (typeof value !== 'object') {
-                return value;
+                return typeof value === 'string' ? this.truncateString(value, 4000) : value;
+            }
+
+            if (typeof Buffer !== 'undefined' && Buffer.isBuffer(value)) {
+                return `[Binary ${value.length} bytes]`;
             }
 
             // Handle circular references
@@ -91,7 +95,9 @@ export class Sanitizer {
 
             // Handle arrays
             if (Array.isArray(value)) {
-                return value.map((item) => sanitize(item, depth - 1));
+                const items = value.slice(0, 100).map((item) => sanitize(item, depth - 1));
+                if (value.length > 100) items.push(`[${value.length - 100} more items truncated]`);
+                return items;
             }
 
             // Handle dates
@@ -110,13 +116,19 @@ export class Sanitizer {
 
             // Handle regular objects
             const sanitized: any = {};
+            let keyCount = 0;
             for (const key in value) {
                 if (hasOwn.call(value, key)) {
+                    if (keyCount >= 200) {
+                        sanitized._truncated = true;
+                        break;
+                    }
                     if (this.isSensitiveKey(key)) {
                         sanitized[key] = REDACTED;
                     } else {
                         sanitized[key] = sanitize(value[key], depth - 1);
                     }
+                    keyCount++;
                 }
             }
 

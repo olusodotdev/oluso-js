@@ -5,6 +5,7 @@ import {
   Sanitizer,
   UserContext,
   generateFingerprint,
+  buildExceptionDetails,
 } from '@oluso/core';
 import { sendErrorReport } from './transport';
 import { OfflineQueue } from './queue';
@@ -85,6 +86,7 @@ export class Oluso {
       sendErrorReport(this.endpoint, report, {
         apiKey: this.options.apiKey,
         timeout: this.options.timeout,
+        logToConsole: this.options.logToConsole,
       })
     );
   }
@@ -112,6 +114,7 @@ export class Oluso {
       : generateFingerprint(error, context);
 
     const report: ErrorReport = {
+      schema_version: 2,
       title: this.generateErrorTitle(error),
       message: error.message,
       stack_trace: error.stack,
@@ -121,6 +124,8 @@ export class Oluso {
       fingerprint,
       context,
       timestamp: Date.now(),
+      exception: buildExceptionDetails(error, this.sanitizer),
+      sdk: { name: '@oluso/nextjs', version: '1.0.1', language: 'javascript' },
     };
 
     return this.sendReport(report);
@@ -153,6 +158,7 @@ export class Oluso {
       await sendErrorReport(this.endpoint, report, {
         apiKey: this.options.apiKey,
         timeout: this.options.timeout,
+        logToConsole: this.options.logToConsole,
       });
 
       if (this.options.enableOfflineQueue && !this.offlineQueue.isEmpty()) {
@@ -161,6 +167,7 @@ export class Oluso {
             sendErrorReport(this.endpoint, queuedReport, {
               apiKey: this.options.apiKey,
               timeout: this.options.timeout,
+              logToConsole: this.options.logToConsole,
             })
           )
           .catch(() => {

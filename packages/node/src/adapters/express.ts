@@ -115,13 +115,25 @@ function handleRequest(
       (res as any).__olusoErrorReported = true;
     };
 
+    const reportResponseFailure = (body?: any) => {
+      markReported();
+      const serverError = new Error(`Server error: ${res.statusCode} - ${req.method} ${req.path}`);
+      (serverError as any).severity = 'critical';
+      // The diagnostics builder redacts and bounds these custom attributes.
+      // Keeping the body here is crucial: many apps catch a provider error,
+      // log the useful message, then only return a 5xx JSON response.
+      (serverError as any).response = {
+        status_code: res.statusCode,
+        headers: typeof (res as any).getHeaders === 'function' ? (res as any).getHeaders() : undefined,
+        body,
+      };
+      oluso.reportError(serverError, req, res);
+    };
+
     // Override send
     res.send = function (body?: any): Response {
       if (res.statusCode >= 500 && !alreadyReported()) {
-        markReported();
-        const serverError = new Error(`Server error: ${res.statusCode} - ${req.method} ${req.path}`);
-        (serverError as any).severity = 'critical';
-        oluso.reportError(serverError, req, res);
+        reportResponseFailure(body);
       }
       return originalSend.call(this, body);
     };
@@ -129,10 +141,7 @@ function handleRequest(
     // Override json
     res.json = function (body?: any): Response {
       if (res.statusCode >= 500 && !alreadyReported()) {
-        markReported();
-        const serverError = new Error(`Server error: ${res.statusCode} - ${req.method} ${req.path}`);
-        (serverError as any).severity = 'critical';
-        oluso.reportError(serverError, req, res);
+        reportResponseFailure(body);
       }
       return originalJson.call(this, body);
     };
@@ -140,10 +149,7 @@ function handleRequest(
     // Override end
     res.end = function (...args: any[]): Response {
       if (res.statusCode >= 500 && !alreadyReported()) {
-        markReported();
-        const serverError = new Error(`Server error: ${res.statusCode} - ${req.method} ${req.path}`);
-        (serverError as any).severity = 'critical';
-        oluso.reportError(serverError, req, res);
+        reportResponseFailure(args[0]);
       }
       return originalEnd.apply(this, args as any);
     };
