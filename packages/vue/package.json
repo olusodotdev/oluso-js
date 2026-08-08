@@ -1,6 +1,6 @@
 {
     "name": "@oluso/vue",
-    "version": "1.0.1",
+    "version": "1.1.0",
     "description": "Oluso error monitoring for Vue applications: a plugin and composable for automatic and manual error reporting",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",

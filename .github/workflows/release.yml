@@ -1,0 +1,67 @@
+name: Release
+on:
+  push:
+    branches: [main]
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        type: boolean
+        default: true
+        description: Build and pack without publishing
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write
+concurrency:
+  group: oluso-js-release
+  cancel-in-progress: false
+jobs:
+  release-pr:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: googleapis/release-please-action@v4
+        with:
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+  publish:
+    if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
+    environment: sdk-production
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+          cache: npm
+      - run: npm install --global npm@latest
+      - run: npm ci
+      - run: npm run build
+      - run: npm test
+      - name: Pack or publish each changed workspace
+        env:
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+        run: |
+          for workspace in packages/*; do
+            package_name=$(node -p "require('./${workspace}/package.json').name")
+            package_version=$(node -p "require('./${workspace}/package.json').version")
+            if [ "$DRY_RUN" = "true" ]; then
+              npm pack --workspace "$workspace" --dry-run
+            elif [ "$(npm view "${package_name}@${package_version}" version 2>/dev/null || true)" != "$package_version" ]; then
+              npm publish --workspace "$workspace" --access public --provenance
+            else
+              echo "${package_name}@${package_version} already exists; skipping"
+            fi
+          done
+      - name: Verify published versions
+        if: github.event_name == 'release' || inputs.dry_run == false
+        run: |
+          for workspace in packages/*; do
+            package_name=$(node -p "require('./${workspace}/package.json').name")
+            package_version=$(node -p "require('./${workspace}/package.json').version")
+            test "$(npm view "${package_name}@${package_version}" version)" = "$package_version"
+          done

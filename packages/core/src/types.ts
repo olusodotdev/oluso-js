@@ -5,6 +5,12 @@ export interface BaseOlusoOptions {
   /** Override the ingestion endpoint (defaults to the Oluso API) */
   endpoint?: string;
 
+  /** Override outcome monitor ingestion (defaults to /api/v1/monitors/events). */
+  monitorEndpoint?: string;
+
+  /** Transient monitor-delivery retries after the first attempt (default: 2). */
+  monitorRetries?: number;
+
   /** Environment name (development, production, staging, etc.) */
   environment?: string;
 

@@ -1,6 +1,6 @@
 {
     "name": "@oluso/angular",
-    "version": "1.0.2",
+    "version": "1.1.0",
     "description": "Oluso error monitoring for Angular applications: an ErrorHandler, DI providers, and an injectOluso() helper for automatic and manual error reporting",
     "type": "module",
     "main": "dist/index.js",

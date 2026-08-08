@@ -1,0 +1,37 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "plugins": [
+    {
+      "type": "node-workspace"
+    }
+  ],
+  "packages": {
+    "packages/core": {"release-type": "node", "component": "core"},
+    "packages/browser": {
+      "release-type": "node",
+      "component": "browser",
+      "extra-files": [{"type": "generic", "path": "src/client.ts"}]
+    },
+    "packages/node": {
+      "release-type": "node",
+      "component": "node",
+      "extra-files": [{"type": "generic", "path": "src/index.ts"}]
+    },
+    "packages/react-native": {
+      "release-type": "node",
+      "component": "react-native",
+      "extra-files": [{"type": "generic", "path": "src/client.ts"}]
+    },
+    "packages/react": {"release-type": "node", "component": "react"},
+    "packages/vue": {"release-type": "node", "component": "vue"},
+    "packages/angular": {"release-type": "node", "component": "angular"},
+    "packages/nextjs": {
+      "release-type": "node",
+      "component": "nextjs",
+      "extra-files": [{"type": "generic", "path": "src/client.ts"}]
+    }
+  },
+  "separate-pull-requests": true,
+  "include-component-in-tag": true,
+  "changelog-type": "github"
+}

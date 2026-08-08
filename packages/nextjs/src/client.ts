@@ -6,6 +6,12 @@ import {
   UserContext,
   generateFingerprint,
   buildExceptionDetails,
+  MonitorClient,
+  MonitorWorkflow,
+  type AssertionOptions,
+  type HeartbeatOptions,
+  type MonitorReceipt,
+  type MonitorReference,
 } from '@oluso/core';
 import { sendErrorReport } from './transport';
 import { OfflineQueue } from './queue';
@@ -30,6 +36,7 @@ export class Oluso {
   private sanitizer: Sanitizer;
   private rateLimiter: RateLimiter;
   private offlineQueue: OfflineQueue;
+  private monitorClient: MonitorClient;
 
   constructor(options: OlusoNextjsOptions) {
     this.options = {
@@ -49,6 +56,7 @@ export class Oluso {
     this.sanitizer = new Sanitizer(this.options.sensitiveKeys);
     this.rateLimiter = new RateLimiter(this.options.maxErrorsPerMinute);
     this.offlineQueue = new OfflineQueue(this.options.maxQueueSize);
+    this.monitorClient = new MonitorClient({ apiKey: this.options.apiKey, endpoint: this.options.monitorEndpoint, timeout: this.options.timeout, retries: this.options.monitorRetries, sensitiveKeys: this.options.sensitiveKeys });
   }
 
   /**
@@ -80,6 +88,10 @@ export class Oluso {
     }
     return this.reportError(error);
   }
+
+  heartbeat(url: string, options?: HeartbeatOptions): Promise<MonitorReceipt> { return this.monitorClient.heartbeat(url, options); }
+  assertOutcome(options: AssertionOptions): Promise<MonitorReceipt> { return this.monitorClient.assertOutcome(options); }
+  workflow(reference: MonitorReference, runId?: string): MonitorWorkflow { return this.monitorClient.workflow(reference, runId); }
 
   async flush(): Promise<void> {
     await this.offlineQueue.processQueue((report) =>
@@ -125,7 +137,7 @@ export class Oluso {
       context,
       timestamp: Date.now(),
       exception: buildExceptionDetails(error, this.sanitizer),
-      sdk: { name: '@oluso/nextjs', version: '1.0.1', language: 'javascript' },
+      sdk: { name: '@oluso/nextjs', version: '1.0.1', language: 'javascript' }, // x-release-please-version
     };
 
     return this.sendReport(report);

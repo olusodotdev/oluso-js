@@ -173,6 +173,10 @@ new Oluso({
 });
 ```
 
+## Process monitors
+
+The same `Oluso` instance exposes `heartbeat(url, options)`, `assertOutcome(options)`, and `workflow(reference, runId?)` in route handlers, server actions, instrumentation, and background workers. See the [complete monitor guide](../../README.md#monitor-outcomes-heartbeats-and-workflows).
+
 ## License
 
 MIT

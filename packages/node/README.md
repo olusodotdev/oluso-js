@@ -150,6 +150,10 @@ const oluso = new Oluso({
 });
 ```
 
+## Process monitors
+
+The same `Oluso` instance exposes `heartbeat(url, options)`, `assertOutcome(options)`, and `workflow(reference, runId?)`. They report missing, wrong, slow, stuck, failed, and unavailable processes even when no exception occurs. See the [complete monitor guide](../../README.md#monitor-outcomes-heartbeats-and-workflows).
+
 ## Error Report Structure
 
 Reports sent to the API include:

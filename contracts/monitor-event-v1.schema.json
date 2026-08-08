@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://oluso.dev/contracts/monitor-event-v1.schema.json",
+  "title": "Oluso monitor event v1",
+  "oneOf": [
+    { "$ref": "#/$defs/heartbeat" },
+    { "$ref": "#/$defs/assertion" },
+    { "$ref": "#/$defs/workflow" }
+  ],
+  "$defs": {
+    "context": {
+      "type": "object",
+      "maxProperties": 100,
+      "additionalProperties": true
+    },
+    "monitorReference": {
+      "oneOf": [
+        { "required": ["monitor_id"], "properties": { "monitor_id": { "type": "string", "minLength": 1 } } },
+        { "required": ["monitor"], "properties": { "monitor": { "type": "string", "minLength": 1 } } }
+      ]
+    },
+    "heartbeat": {
+      "type": "object",
+      "required": ["status", "timestamp"],
+      "properties": {
+        "status": { "enum": ["success", "ok", "failed", "failure"] },
+        "duration_ms": { "type": "integer", "minimum": 0 },
+        "message": { "type": "string" },
+        "evidence": { "$ref": "#/$defs/context" },
+        "timestamp": { "type": "integer", "minimum": 1 }
+      },
+      "additionalProperties": false
+    },
+    "assertion": {
+      "allOf": [
+        { "$ref": "#/$defs/monitorReference" },
+        {
+          "type": "object",
+          "required": ["passed", "timestamp"],
+          "properties": {
+            "monitor_id": { "type": "string" },
+            "monitor": { "type": "string" },
+            "run_id": { "type": "string" },
+            "passed": { "type": "boolean" },
+            "kind": { "enum": ["failed", "wrong", "slow", "stuck", "missing", "unavailable"] },
+            "expected": true,
+            "actual": true,
+            "duration_ms": { "type": "integer", "minimum": 0 },
+            "message": { "type": "string" },
+            "context": { "$ref": "#/$defs/context" },
+            "timestamp": { "type": "integer", "minimum": 1 }
+          }
+        }
+      ]
+    },
+    "workflow": {
+      "allOf": [
+        { "$ref": "#/$defs/monitorReference" },
+        {
+          "type": "object",
+          "required": ["run_id", "state", "status", "timestamp"],
+          "properties": {
+            "monitor_id": { "type": "string" },
+            "monitor": { "type": "string" },
+            "run_id": { "type": "string", "minLength": 1 },
+            "state": { "type": "string", "minLength": 1 },
+            "status": { "enum": ["running", "failed", "completed"] },
+            "duration_ms": { "type": "integer", "minimum": 0 },
+            "message": { "type": "string" },
+            "context": { "$ref": "#/$defs/context" },
+            "timestamp": { "type": "integer", "minimum": 1 }
+          }
+        }
+      ]
+    }
+  }
+}

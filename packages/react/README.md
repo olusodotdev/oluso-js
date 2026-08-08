@@ -93,6 +93,10 @@ new OlusoClient({
 });
 ```
 
+## Process monitors
+
+The client returned by `useOluso()`—and a directly constructed `OlusoClient`—supports `heartbeat`, `assertOutcome`, and ordered `workflow` checkpoints. See the [complete monitor guide](../../README.md#monitor-outcomes-heartbeats-and-workflows).
+
 ## License
 
 MIT

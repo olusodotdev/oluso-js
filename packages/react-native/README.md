@@ -90,6 +90,10 @@ new OlusoClient({
 });
 ```
 
+## Process monitors
+
+The `OlusoClient` instance exposes `heartbeat(url, options)`, `assertOutcome(options)`, and `workflow(reference, runId?)`, with the same redaction and retry guarantees as the other JavaScript SDKs. See the [complete monitor guide](../../README.md#monitor-outcomes-heartbeats-and-workflows).
+
 ## License
 
 MIT

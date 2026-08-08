@@ -1,0 +1,34 @@
+name: Shared SDK conformance
+
+on:
+  workflow_call:
+    inputs:
+      sdk_language:
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out SDK under test
+        uses: actions/checkout@v4
+        with:
+          path: sdk
+      - name: Check out the canonical Oluso contract
+        uses: actions/checkout@v4
+        with:
+          repository: olusodotdev/oluso-js
+          ref: main
+          sparse-checkout: contracts
+          path: contract-source
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Verify implementation and behavioral evidence
+        env:
+          SDK_LANGUAGE: ${{ inputs.sdk_language }}
+        run: node contract-source/contracts/verify-contract.mjs sdk "$SDK_LANGUAGE"

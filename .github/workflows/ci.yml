@@ -7,6 +7,15 @@ on:
     branches: [main]
 
 jobs:
+  conformance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node contracts/verify-contract.mjs . javascript
+
   build-and-test:
     runs-on: ubuntu-latest
     strategy:

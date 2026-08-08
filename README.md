@@ -35,6 +35,38 @@ npm install @oluso/angular
 
 See each package's README for usage.
 
+## Monitor outcomes, heartbeats, and workflows
+
+Create the corresponding monitor under **Project → Monitors**, then use the same client you already created for error reporting:
+
+```ts
+const oluso = new Oluso({ apiKey: process.env.OLUSO_API_KEY! });
+
+// A heartbeat uses the monitor-specific secret HTTPS URL shown once at creation.
+await oluso.heartbeat(process.env.OLUSO_BACKUP_HEARTBEAT_URL!, {
+  context: { job: 'nightly-backup', rows: 12_402 },
+});
+
+// Assert a business result even when no exception was thrown.
+await oluso.assertOutcome({
+  monitor: 'checkout-total',
+  passed: chargedAmount === expectedAmount,
+  expected: expectedAmount,
+  actual: chargedAmount,
+  durationMs: Date.now() - startedAt,
+  context: { orderId },
+});
+
+// Track an ordered process. A run ID is generated when omitted.
+const deployment = oluso.workflow({ monitor: 'production-deployment' });
+await deployment.checkpoint('queued', { commitSha });
+await deployment.checkpoint('built', { artifact });
+await deployment.checkpoint('deployed', { region: 'lon1' });
+await deployment.complete({ release: artifact });
+```
+
+Use `{ monitorId: '...' }` instead of `{ monitor: '...' }` when you want an immutable reference. Evidence is recursively redacted and bounded. Monitor requests time out, retry transient network/408/429/5xx failures with exponential backoff, and never retry permanent 4xx responses. The project connection string is deliberately **not** attached to heartbeat URLs.
+
 ## Development
 
 This repo uses npm workspaces.

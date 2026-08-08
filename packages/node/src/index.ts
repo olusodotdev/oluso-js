@@ -6,6 +6,14 @@ import generateFingerprint from './utils/fingerprint';
 import { getServerContext, RateLimiter } from './utils/server';
 import OfflineQueue from './utils/queue';
 import { buildExceptionDetails } from './utils/diagnostics';
+import {
+  MonitorClient,
+  MonitorWorkflow,
+  type AssertionOptions,
+  type HeartbeatOptions,
+  type MonitorReceipt,
+  type MonitorReference,
+} from '@oluso/core';
 
 export * from './types';
 export * from './adapters/express';
@@ -19,6 +27,7 @@ export class Oluso {
   private rateLimiter: RateLimiter;
   private offlineQueue: OfflineQueue;
   private globalHandlersRegistered = false;
+  private monitorClient: MonitorClient;
 
   constructor(options: OlusoOptions) {
     // Set default options
@@ -42,6 +51,13 @@ export class Oluso {
     this.sanitizer = new Sanitizer(this.options.sensitiveKeys);
     this.rateLimiter = new RateLimiter(this.options.maxErrorsPerMinute);
     this.offlineQueue = new OfflineQueue(this.options.maxQueueSize);
+    this.monitorClient = new MonitorClient({
+      apiKey: this.options.apiKey,
+      endpoint: this.options.monitorEndpoint,
+      timeout: this.options.timeout,
+      retries: this.options.monitorRetries,
+      sensitiveKeys: this.options.sensitiveKeys,
+    });
 
     // Register global uncaught exception handler
     this.registerGlobalHandlers();
@@ -158,6 +174,21 @@ export class Oluso {
     return this.reportError(error);
   }
 
+  /** Report successful/failed completion to a heartbeat monitor URL. */
+  public heartbeat(url: string, options?: HeartbeatOptions): Promise<MonitorReceipt> {
+    return this.monitorClient.heartbeat(url, options);
+  }
+
+  /** Report whether a business or domain outcome matched its expectation. */
+  public assertOutcome(options: AssertionOptions): Promise<MonitorReceipt> {
+    return this.monitorClient.assertOutcome(options);
+  }
+
+  /** Start a durable, ordered workflow run. */
+  public workflow(reference: MonitorReference, runId?: string): MonitorWorkflow {
+    return this.monitorClient.workflow(reference, runId);
+  }
+
   /**
    * Flush all queued errors
    */
@@ -235,7 +266,7 @@ export class Oluso {
       context: context,
       timestamp: Date.now(),
       exception: buildExceptionDetails(error, this.sanitizer),
-      sdk: { name: 'oluso-node', version: '2.1.6', language: 'javascript' },
+      sdk: { name: 'oluso-node', version: '2.2.0', language: 'javascript' }, // x-release-please-version
     };
 
     // Send the report

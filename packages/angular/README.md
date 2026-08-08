@@ -84,6 +84,10 @@ provideOluso({
 });
 ```
 
+## Process monitors
+
+The client returned by `injectOluso()` supports `heartbeat`, `assertOutcome`, and ordered `workflow` checkpoints. See the [complete monitor guide](../../README.md#monitor-outcomes-heartbeats-and-workflows).
+
 ## License
 
 MIT

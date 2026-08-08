@@ -8,6 +8,8 @@ interface SendOptions {
   timeout?: number;
 }
 
+export const MAX_DIAGNOSTIC_PAYLOAD_BYTES = 512 * 1024;
+
 export function sendErrorReport(
   reportUrl: string, 
   errorReport: ErrorReport, 
@@ -17,6 +19,11 @@ export function sendErrorReport(
     try {
       const url = new URL(reportUrl);
       const data = JSON.stringify(errorReport);
+      const payloadBytes = Buffer.byteLength(data);
+      if (payloadBytes > MAX_DIAGNOSTIC_PAYLOAD_BYTES) {
+        reject(new Error(`Oluso report payload is ${payloadBytes} bytes; maximum is ${MAX_DIAGNOSTIC_PAYLOAD_BYTES}`));
+        return;
+      }
       
       const requestOptions = {
         method: 'POST',
@@ -25,7 +32,7 @@ export function sendErrorReport(
         path: url.pathname,
         headers: {
           'Content-Type': 'application/json',
-          'Content-Length': Buffer.byteLength(data),
+          'Content-Length': payloadBytes,
           'x-oluso-signature': options.apiKey
         },
         timeout: options.timeout || 5000
@@ -46,27 +53,27 @@ export function sendErrorReport(
             resolve();
           } else {
             console.error(`[Oluso] Error reporting failed with status ${res.statusCode}: ${responseData}`);
-            resolve(); // Don't reject as we don't want error reporting failures to break the app
+            reject(new Error(`Oluso reporting failed with status ${res.statusCode}`));
           }
         });
       });
       
       req.on('error', (err) => {
         console.error('[Oluso] Failed to send error report:', err.message);
-        resolve();
+        reject(err);
       });
       
       req.on('timeout', () => {
         req.destroy();
         console.error('[Oluso] Timeout when sending error report');
-        resolve();
+        reject(new Error('Oluso reporting timed out'));
       });
       
       req.write(data);
       req.end();
     } catch (err) {
       console.error('[Oluso] Exception when sending error report:', err);
-      resolve();
+      reject(err);
     }
   });
 }

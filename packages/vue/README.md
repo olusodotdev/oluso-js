@@ -86,6 +86,10 @@ app.use(OlusoVuePlugin, {
 });
 ```
 
+## Process monitors
+
+The client returned by `useOluso()` or available as `$oluso` supports `heartbeat`, `assertOutcome`, and ordered `workflow` checkpoints. See the [complete monitor guide](../../README.md#monitor-outcomes-heartbeats-and-workflows).
+
 ## License
 
 MIT

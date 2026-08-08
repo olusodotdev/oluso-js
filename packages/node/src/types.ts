@@ -28,6 +28,12 @@ export interface OlusoOptions {
   /** Timeout in milliseconds for API calls (default: 5000) */
   timeout?: number;
 
+  /** Override outcome monitor ingestion (defaults to /api/v1/monitors/events). */
+  monitorEndpoint?: string;
+
+  /** Transient monitor-delivery retries after the first attempt (default: 2). */
+  monitorRetries?: number;
+
   /** Whether to log errors to console in addition to reporting (default: true) */
   logToConsole?: boolean;
 
