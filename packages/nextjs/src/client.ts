@@ -137,7 +137,7 @@ export class Oluso {
       context,
       timestamp: Date.now(),
       exception: buildExceptionDetails(error, this.sanitizer),
-      sdk: { name: '@oluso/nextjs', version: '1.0.1', language: 'javascript' }, // x-release-please-version
+      sdk: { name: '@oluso/nextjs', version: '1.1.1', language: 'javascript' }, // x-release-please-version
     };
 
     return this.sendReport(report);
