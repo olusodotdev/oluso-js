@@ -10,6 +10,15 @@ interface SendOptions {
 
 export const MAX_DIAGNOSTIC_PAYLOAD_BYTES = 512 * 1024;
 
+/** The report exceeds the transport's payload cap. Retrying or queueing an
+ * oversized report can never succeed — callers must trim or drop it. */
+export class PayloadTooLargeError extends Error {
+  constructor(payloadBytes: number) {
+    super(`Oluso report payload is ${payloadBytes} bytes; maximum is ${MAX_DIAGNOSTIC_PAYLOAD_BYTES}`);
+    this.name = 'PayloadTooLargeError';
+  }
+}
+
 export function sendErrorReport(
   reportUrl: string, 
   errorReport: ErrorReport, 
@@ -21,7 +30,7 @@ export function sendErrorReport(
       const data = JSON.stringify(errorReport);
       const payloadBytes = Buffer.byteLength(data);
       if (payloadBytes > MAX_DIAGNOSTIC_PAYLOAD_BYTES) {
-        reject(new Error(`Oluso report payload is ${payloadBytes} bytes; maximum is ${MAX_DIAGNOSTIC_PAYLOAD_BYTES}`));
+        reject(new PayloadTooLargeError(payloadBytes));
         return;
       }
       

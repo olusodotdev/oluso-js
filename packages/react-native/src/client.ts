@@ -15,7 +15,7 @@ import {
   type MonitorReceipt,
   type MonitorReference,
 } from '@oluso/core';
-import { sendErrorReport } from './transport';
+import { PayloadTooLargeError, sendErrorReport } from './transport';
 import { OfflineQueue } from './queue';
 import { getDeviceContext } from './device-context';
 
@@ -105,13 +105,10 @@ export class OlusoClient {
     this.breadcrumbs.setCustomContext(key, value);
   }
 
+  /** `customContext` applies to this report only; use setCustomContext for
+   * context that should attach to every subsequent report. */
   captureException(error: Error, customContext?: Record<string, any>): Promise<void> {
-    if (customContext) {
-      for (const [key, value] of Object.entries(customContext)) {
-        this.setCustomContext(key, value);
-      }
-    }
-    return this.reportError(error);
+    return this.reportError(error, customContext);
   }
 
   heartbeat(url: string, options?: HeartbeatOptions): Promise<MonitorReceipt> { return this.monitorClient.heartbeat(url, options); }
@@ -128,7 +125,7 @@ export class OlusoClient {
     );
   }
 
-  reportError(error: Error): Promise<void> {
+  reportError(error: Error, customContext?: Record<string, any>): Promise<void> {
     if (this.options.shouldReport && !this.options.shouldReport(error)) {
       return Promise.resolve();
     }
@@ -144,7 +141,7 @@ export class OlusoClient {
       console.error('[Oluso]', error);
     }
 
-    const context = this.buildErrorContext();
+    const context = this.buildErrorContext(customContext);
 
     const fingerprint = this.options.fingerprint
       ? this.options.fingerprint(error, context)
@@ -168,11 +165,15 @@ export class OlusoClient {
     return this.sendReport(report);
   }
 
-  private buildErrorContext(): ErrorContext {
-    return {
+  private buildErrorContext(customContext?: Record<string, any>): ErrorContext {
+    const context: ErrorContext = {
       device: this.sanitizer.sanitizeObject(getDeviceContext()),
       ...this.breadcrumbs.getContext(),
     };
+    if (customContext) {
+      context.custom = { ...context.custom, ...customContext };
+    }
+    return context;
   }
 
   private async sendReport(report: ErrorReport): Promise<void> {
@@ -197,8 +198,40 @@ export class OlusoClient {
           });
       }
     } catch (err) {
+      if (err instanceof PayloadTooLargeError) {
+        await this.sendTrimmedReport(report);
+        return;
+      }
       if (this.options.enableOfflineQueue) {
         this.offlineQueue.enqueue(report);
+      }
+    }
+  }
+
+  /**
+   * A report can only exceed the transport's payload cap through what was
+   * attached to it (breadcrumbs, custom context, device info) -- the error
+   * itself is small. Retry once with the context stripped so the error
+   * still reports, and never queue an oversized report: it would burn its
+   * retries without ever being able to succeed.
+   */
+  private async sendTrimmedReport(report: ErrorReport): Promise<void> {
+    const trimmed: ErrorReport = { ...report, context: {} };
+    try {
+      await sendErrorReport(this.endpoint, trimmed, {
+        apiKey: this.options.apiKey,
+        timeout: this.options.timeout,
+        logToConsole: this.options.logToConsole,
+      });
+    } catch (err) {
+      if (err instanceof PayloadTooLargeError) {
+        if (this.options.logToConsole) {
+          console.warn('[Oluso] Report dropped: payload exceeds the size limit even with context stripped');
+        }
+        return;
+      }
+      if (this.options.enableOfflineQueue) {
+        this.offlineQueue.enqueue(trimmed);
       }
     }
   }
@@ -208,7 +241,7 @@ export class OlusoClient {
     if (firstLine && firstLine.length > 0) {
       return firstLine.length <= 100 ? firstLine : `${firstLine.substring(0, 97)}...`;
     }
-    return `${error.constructor.name} Error`;
+    return error.constructor.name || 'Error';
   }
 
   getBreadcrumbManager(): BreadcrumbManager {
