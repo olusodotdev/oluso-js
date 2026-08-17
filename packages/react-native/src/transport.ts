@@ -7,6 +7,16 @@ interface SendOptions {
 }
 
 export const MAX_DIAGNOSTIC_PAYLOAD_BYTES = 512 * 1024;
+
+/** The report exceeds the transport's payload cap. Retrying or queueing an
+ * oversized report can never succeed — callers must trim or drop it. */
+export class PayloadTooLargeError extends Error {
+  constructor(payloadBytes: number) {
+    super(`Oluso report payload is ${payloadBytes} bytes; maximum is ${MAX_DIAGNOSTIC_PAYLOAD_BYTES}`);
+    this.name = 'PayloadTooLargeError';
+  }
+}
+
 function utf8ByteLength(value: string): number {
   let bytes = 0;
   for (const character of value) {
@@ -17,8 +27,9 @@ function utf8ByteLength(value: string): number {
 }
 
 /**
- * Send an error report via fetch. Never rejects — a failed send should
- * never crash the host application, it just means the report gets queued.
+ * Send an error report via fetch. Rejects on failure (network error,
+ * non-2xx status, or PayloadTooLargeError before any request is made) —
+ * callers decide whether a failed report is queued, trimmed, or dropped.
  */
 export function sendErrorReport(
   reportUrl: string,
@@ -28,7 +39,7 @@ export function sendErrorReport(
   const body = JSON.stringify(errorReport);
   const payloadBytes = utf8ByteLength(body);
   if (payloadBytes > MAX_DIAGNOSTIC_PAYLOAD_BYTES) {
-    return Promise.reject(new Error(`Oluso report payload is ${payloadBytes} bytes; maximum is ${MAX_DIAGNOSTIC_PAYLOAD_BYTES}`));
+    return Promise.reject(new PayloadTooLargeError(payloadBytes));
   }
   const controller = typeof AbortController !== 'undefined' ? new AbortController() : undefined;
   const timeoutId = controller

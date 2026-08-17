@@ -1,5 +1,5 @@
 import { OlusoOptions, ErrorReport, Breadcrumb, UserContext, ErrorContext } from './types';
-import { sendErrorReport } from './utils/https';
+import { PayloadTooLargeError, sendErrorReport } from './utils/https';
 import ContextManager from './utils/context';
 import Sanitizer from './utils/sanitizer';
 import generateFingerprint from './utils/fingerprint';
@@ -163,15 +163,12 @@ export class Oluso {
   }
 
   /**
-   * Capture and report an error with optional context
+   * Capture and report an error with optional context. `customContext`
+   * applies to this report only; use setCustomContext for context that
+   * should attach to every subsequent report.
    */
   public captureException(error: Error, customContext?: Record<string, any>): Promise<void> {
-    if (customContext) {
-      for (const [key, value] of Object.entries(customContext)) {
-        this.setCustomContext(key, value);
-      }
-    }
-    return this.reportError(error);
+    return this.reportError(error, undefined, undefined, customContext);
   }
 
   /** Report successful/failed completion to a heartbeat monitor URL. */
@@ -204,7 +201,7 @@ export class Oluso {
   /**
    * Report an error to the API
    */
-  public reportError(error: Error, req?: any, res?: any): Promise<void> {
+  public reportError(error: Error, req?: any, res?: any, customContext?: Record<string, any>): Promise<void> {
     // Check if we should report this error
     if (this.options.shouldReport && !this.options.shouldReport(error, req, res)) {
       return Promise.resolve();
@@ -243,7 +240,7 @@ export class Oluso {
     }
 
     // Build error context
-    const context = this.buildErrorContext(req, res);
+    const context = this.buildErrorContext(req, res, customContext);
 
     // Generate fingerprint
     const fingerprint = this.options.fingerprint
@@ -276,11 +273,15 @@ export class Oluso {
   /**
    * Build error context from request and stored context
    */
-  private buildErrorContext(req?: any, res?: any): ErrorContext {
+  private buildErrorContext(req?: any, res?: any, customContext?: Record<string, any>): ErrorContext {
     const context: ErrorContext = {
       server: getServerContext(),
       ...this.contextManager.getContext(),
     };
+
+    if (customContext) {
+      context.custom = { ...context.custom, ...customContext };
+    }
 
     // Add request context if available
     if (req) {
@@ -331,9 +332,40 @@ export class Oluso {
         });
       }
     } catch (err) {
+      if (err instanceof PayloadTooLargeError) {
+        await this.sendTrimmedReport(report);
+        return;
+      }
       // If sending failed and offline queue is enabled, queue the report
       if (this.options.enableOfflineQueue) {
         this.offlineQueue.enqueue(report);
+      }
+    }
+  }
+
+  /**
+   * A report can only exceed the transport's payload cap through what was
+   * attached to it (breadcrumbs, request bodies, custom context) -- the
+   * error itself is small. Retry once with the context stripped so the
+   * error still reports, and never queue an oversized report: it would
+   * burn its retries without ever being able to succeed.
+   */
+  private async sendTrimmedReport(report: ErrorReport): Promise<void> {
+    const trimmed: ErrorReport = { ...report, context: {} };
+    try {
+      await sendErrorReport(this.reportUrl, trimmed, {
+        apiKey: this.options.apiKey,
+        timeout: this.options.timeout
+      });
+    } catch (err) {
+      if (err instanceof PayloadTooLargeError) {
+        if (this.options.logToConsole) {
+          console.warn('[Oluso] Report dropped: payload exceeds the size limit even with context stripped');
+        }
+        return;
+      }
+      if (this.options.enableOfflineQueue) {
+        this.offlineQueue.enqueue(trimmed);
       }
     }
   }
@@ -345,7 +377,7 @@ export class Oluso {
       // Limit title length
       return firstLine.length <= 100 ? firstLine : `${firstLine.substring(0, 97)}...`;
     }
-    return `${error.constructor.name} Error`;
+    return error.constructor.name || 'Error';
   }
 
   /**
